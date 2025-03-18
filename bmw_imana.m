@@ -4,7 +4,8 @@ function varargout = efcp_imana(what, varargin)
     % double quotes " because some spm function raise error with double
     % quotes
     if ismac
-        baseDir = '/Volumes/Diedrichsen_data$/data/Chord_exp/EFC_patternfMRI';
+        % baseDir = '/Volumes/Diedrichsen_data$/data/Chord_exp/EFC_patternfMRI';
+        baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
     elseif isunix
         baseDir = '/cifs/diedrichsen/data/Chord_exp/EFC_patternfMRI';
     else
@@ -49,7 +50,8 @@ function varargout = efcp_imana(what, varargin)
             
             for i = 1:length(ses)
                 runs = spmj_dotstr2array(participant_row.(sprintf('run_ses%d',i)){1});
-                func_tmp_name = sprintf('%s.nii.gz', participant_row.(sprintf('func_name_ses%d',i)){1});
+                % func_tmp_name = sprintf('%s.nii.gz', participant_row.(sprintf('func_name_ses%d',i)){1});
+                func_tmp_name = sprintf('sub-%s_ses-%s_%s.nii.gz',participant_id, ses{i}, participant_row.func_name{1});
                 
                 % loop on runs of sess:
                 for run = runs
@@ -202,21 +204,57 @@ function varargout = efcp_imana(what, varargin)
                                   'epi_files', {epi_files.name});
             end
 
-        case 'FUNC:realign_unwarp'   
+        case 'FUNC:make_one_session'
+            cnt = 1;
             for i = 1:length(ses)
-                % Do spm_realign_unwarp
-                epi_runs = dir(fullfile(baseDir, imagingRawDir, participant_id, sprintf('ses-%s',ses{i}), [participant_id '_run_*.nii']));
-                fmap_runs = dir(fullfile(baseDir, fmapDir, participant_id, sprintf('ses-%s',ses{i}), ['vdm5_sc' participant_id '_phase_run_*.nii']));
+                epi_path = fullfile(baseDir, imagingRawDir, participant_id, sprintf('ses-%s',ses{i}));
+                epi_files = dir(fullfile(epi_path, [participant_id '_run_*.nii']));
                 
-                epi_list = {};
-                fmap_list = {};
-                for run = 1:length(epi_runs)
-                    epi_list{end+1} = fullfile(epi_runs(run).folder, epi_runs(run).name);
-                    fmap_list{end+1} = fullfile(fmap_runs(run).folder, fmap_runs(run).name);
+                fmap_path = fullfile(baseDir, fmapDir, participant_id, sprintf('ses-%s',ses{i}));
+                fmap_files = dir(fullfile(fmap_path, ['vdm5_sc*_phase_run_*.nii']));
+                
+                % copy to main subject folder:
+                for run = 1:length(epi_files)
+                    output_epi_file = fullfile(baseDir, imagingRawDir, participant_id, sprintf('%s_run_%02d.nii',participant_id,cnt));
+                    copyfile(fullfile(epi_files(run).folder,epi_files(run).name), output_epi_file);
+                    fprintf('copied %s to %s\n',epi_files(run).name, sprintf('%s_run_%02d.nii',participant_id,cnt))
+
+                    output_fmap_file = fullfile(baseDir, fmapDir, participant_id, sprintf('vdm5_sc%s_phase_run_%02d.nii',participant_id,cnt));
+                    copyfile(fullfile(fmap_files(run).folder,fmap_files(run).name), output_fmap_file);
+                    fprintf('copied %s to %s\n',fmap_files(run).name, sprintf('vdm5_sc%s_phase_run_%02d.nii',participant_id,cnt))
+                    
+                    cnt = cnt+1;
                 end
-                
-                spmj_realign_unwarp(epi_list, fmap_list, 'rtm', rtm);
             end
+            
+        case 'FUNC:realign_unwarp'
+            % for i = 1:length(ses)
+            %     % Do spm_realign_unwarp
+            %     epi_runs = dir(fullfile(baseDir, imagingRawDir, participant_id, sprintf('ses-%s',ses{i}), [participant_id '_run_*.nii']));
+            %     fmap_runs = dir(fullfile(baseDir, fmapDir, participant_id, sprintf('ses-%s',ses{i}), ['vdm5_sc' participant_id '_phase_run_*.nii']));
+            % 
+            %     epi_list = {};
+            %     fmap_list = {};
+            %     for run = 1:length(epi_runs)
+            %         epi_list{end+1} = fullfile(epi_runs(run).folder, epi_runs(run).name);
+            %         fmap_list{end+1} = fullfile(fmap_runs(run).folder, fmap_runs(run).name);
+            %     end
+            % 
+            %     spmj_realign_unwarp(epi_list, fmap_list, 'rtm', rtm);
+            % end
+            % Do spm_realign_unwarp
+            epi_runs = dir(fullfile(baseDir, imagingRawDir, participant_id, [participant_id '_run_*.nii']));
+            fmap_runs = dir(fullfile(baseDir, fmapDir, participant_id, ['vdm5_sc' participant_id '_phase_run_*.nii']));
+            
+            epi_list = {};
+            fmap_list = {};
+            for run = 1:length(epi_runs)
+                epi_list{end+1} = fullfile(epi_runs(run).folder, epi_runs(run).name);
+                fmap_list{end+1} = fullfile(fmap_runs(run).folder, fmap_runs(run).name);
+            end
+
+            spmj_realign_unwarp(epi_list, fmap_list, 'rtm', rtm);
+
             
         case 'FUNC:inspect_realign'
             % looks for motion correction logs into imaging_data, needs to
