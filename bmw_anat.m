@@ -1,7 +1,7 @@
 function varargout = bmw_anat(what, varargin)
     if ismac
-        % baseDir = '/Volumes/Diedrichsen_data$/data/Chord_exp/EFC_patternfMRI';
-        baseDir = '/Volumes/Diedrichsen_data$/data/bimanual_wrist';
+        baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
+        % baseDir = '/Volumes/Diedrichsen_data$/data/bimanual_wrist';
     elseif isunix
         baseDir = '/cifs/diedrichsen/data/Chord_exp/EFC_patternfMRI';
     else
@@ -17,7 +17,7 @@ function varargout = bmw_anat(what, varargin)
     SPMhome = spm('dir');
     
     pinfo = dload(fullfile(baseDir,'participants.tsv'));
-
+    
     switch(what)
         case 'BIDS:move_unzip_raw_anat'
             % Moves, unzips and renames raw anatomical from 
@@ -83,7 +83,7 @@ function varargout = bmw_anat(what, varargin)
             subj_id = subj_row.participant_id{1};
 
             % Get the anat of subject
-            subj_anat_img = fullfile(baseDir,anatomicalDir, subj_id, sprintf('%s_T1w_LPI.nii', subj_id));
+            subj_anat_img = fullfile(baseDir,anatomicalDir, subj_id, sprintf('%s_T1w_raw.nii', subj_id));
 
             % get location of ac
             locACx = subj_row.locACx;
