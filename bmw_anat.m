@@ -3,7 +3,7 @@ function varargout = bmw_anat(what, varargin)
         baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
         % baseDir = '/Volumes/Diedrichsen_data$/data/bimanual_wrist';
     elseif isunix
-        baseDir = '/cifs/diedrichsen/data/Chord_exp/EFC_patternfMRI';
+        baseDir = '';
     else
         disp('Running on Windows or another OS');
     end

@@ -1,4 +1,4 @@
-function varargout = efcp_imana(what, varargin)
+function varargout = bmw_imana(what, varargin)
     % Use a different baseDir when using your local machine or the cbs
     % server. Add more directory if needed. Use single quotes ' and not
     % double quotes " because some spm function raise error with double
@@ -7,7 +7,7 @@ function varargout = efcp_imana(what, varargin)
         % baseDir = '/Volumes/Diedrichsen_data$/data/Chord_exp/EFC_patternfMRI';
         baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
     elseif isunix
-        baseDir = '/cifs/diedrichsen/data/Chord_exp/EFC_patternfMRI';
+        baseDir = '';
     else
         disp('Running on Windows or another OS');
     end
@@ -149,7 +149,7 @@ function varargout = efcp_imana(what, varargin)
                 end
             end
             
-        case 'FUNC:make_fmap'                
+        case 'FUNC:make_fmap'
             % Differences in magnetic susceptibility between tissues (e.g.,
             % air-tissue or bone-tissue interfaces) can cause
             % inhomogeneities in the magnetic field. These inhomogeneities
@@ -203,46 +203,70 @@ function varargout = efcp_imana(what, varargin)
                                   'func_dir',fullfile(baseDir, imagingRawDir, participant_id, sprintf('ses-%s',ses{i})),...
                                   'epi_files', {epi_files.name});
             end
+        
+        case 'FUNC:manual_align_runs'
+            % 1- Manually coregister run01 of each session to the 
+            % anatomical image. 
+
+            % 2- make same align for the images of each session:
+            for i = 1:length(ses)
+                epi_files = dir(fullfile(baseDir, imagingRawDir, participant_id, sprintf('ses-%s',ses{i}), [participant_id '_run_*.nii']));
+                epi_list = {}; % Initialize as an empty cell array
+                for run = 1:length(epi_files)   % from second run to end.
+                    epi_list{end+1} = fullfile(epi_files(run).folder, epi_files(run).name);
+                end
+                
+                % select the reference image - first image of first run:
+                epi_run01 = fullfile(epi_files(1).folder, epi_files(1).name);
+                P{1} = [epi_run01, ',1'];
+                
+                % select images to be realigned:
+                Q = {};
+                for r = 1:length(epi_list)
+                    for j = 1:pinfo.numTR
+                        Q{end+1} = fullfile(sprintf('%s,%d', epi_list{r}, j));
+                    end
+                end
+                
+                spmj_makesamealign_nifti(char(P),char(Q));
+            end
 
         case 'FUNC:make_one_ses'
-            % make_fmap creates us04_run_XX.nii files which are unwarped
-            % first volumes of each image. 
-            % First coreg the fmap corrected first image to the anatomical:
-            for i = 1:length(ses)
-                mean_epi = dir(fullfile(baseDir, imagingDir, participant_id, sprintf('ses-%s',ses{i}), ['bmean' prefix, participant_id '_run_*.nii']));
-                
-                J.source = {fullfile(mean_epi(1).folder, mean_epi(1).name)}; 
-                J.ref = {fullfile(baseDir, anatomicalDir, participant_id, [participant_id, '_T1w','.nii'])};
-                J.other = {''};
-                J.eoptions.cost_fun = 'nmi';
-                J.eoptions.sep = [4 2];
-                J.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
-                J.eoptions.fwhm = [7 7];
-                matlabbatch{1}.spm.spatial.coreg.estimate=J;
-                spm_jobman('run',matlabbatch);
-            end
-            
-            % cnt = 1;
             % for i = 1:length(ses)
-            %     epi_path = fullfile(baseDir, imagingRawDir, participant_id, sprintf('ses-%s',ses{i}));
-            %     epi_files = dir(fullfile(epi_path, [participant_id '_run_*.nii']));
+            %     mean_epi = dir(fullfile(baseDir, imagingDir, participant_id, sprintf('ses-%s',ses{i}), ['bmean' prefix, participant_id '_run_*.nii']));
             % 
-            %     fmap_path = fullfile(baseDir, fmapDir, participant_id, sprintf('ses-%s',ses{i}));
-            %     fmap_files = dir(fullfile(fmap_path, ['vdm5_sc*_phase_run_*.nii']));
-            % 
-            %     % copy to main subject folder:
-            %     for run = 1:length(epi_files)
-            %         output_epi_file = fullfile(baseDir, imagingRawDir, participant_id, sprintf('%s_run_%02d.nii',participant_id,cnt));
-            %         copyfile(fullfile(epi_files(run).folder,epi_files(run).name), output_epi_file);
-            %         fprintf('copied %s to %s\n',epi_files(run).name, sprintf('%s_run_%02d.nii',participant_id,cnt))
-            % 
-            %         output_fmap_file = fullfile(baseDir, fmapDir, participant_id, sprintf('vdm5_sc%s_phase_run_%02d.nii',participant_id,cnt));
-            %         copyfile(fullfile(fmap_files(run).folder,fmap_files(run).name), output_fmap_file);
-            %         fprintf('copied %s to %s\n',fmap_files(run).name, sprintf('vdm5_sc%s_phase_run_%02d.nii',participant_id,cnt))
-            % 
-            %         cnt = cnt+1;
-            %     end
+            %     J.source = {fullfile(mean_epi(1).folder, mean_epi(1).name)}; 
+            %     J.ref = {fullfile(baseDir, anatomicalDir, participant_id, [participant_id, '_T1w','.nii'])};
+            %     J.other = {''};
+            %     J.eoptions.cost_fun = 'nmi';
+            %     J.eoptions.sep = [4 2];
+            %     J.eoptions.tol = [0.02 0.02 0.02 0.001 0.001 0.001 0.01 0.01 0.01 0.001 0.001 0.001];
+            %     J.eoptions.fwhm = [7 7];
+            %     matlabbatch{1}.spm.spatial.coreg.estimate=J;
+            %     spm_jobman('run',matlabbatch);
             % end
+            
+            cnt = 1;
+            for i = 1:length(ses)
+                epi_path = fullfile(baseDir, imagingRawDir, participant_id, sprintf('ses-%s',ses{i}));
+                epi_files = dir(fullfile(epi_path, [participant_id '_run_*.nii']));
+
+                fmap_path = fullfile(baseDir, fmapDir, participant_id, sprintf('ses-%s',ses{i}));
+                fmap_files = dir(fullfile(fmap_path, ['vdm5_sc*_phase_run_*.nii']));
+
+                % copy to main subject folder:
+                for run = 1:length(epi_files)
+                    output_epi_file = fullfile(baseDir, imagingRawDir, participant_id, sprintf('%s_run_%02d.nii',participant_id,cnt));
+                    copyfile(fullfile(epi_files(run).folder,epi_files(run).name), output_epi_file);
+                    fprintf('copied %s to %s\n',epi_files(run).name, sprintf('%s_run_%02d.nii',participant_id,cnt))
+
+                    output_fmap_file = fullfile(baseDir, fmapDir, participant_id, sprintf('vdm5_sc%s_phase_run_%02d.nii',participant_id,cnt));
+                    copyfile(fullfile(fmap_files(run).folder,fmap_files(run).name), output_fmap_file);
+                    fprintf('copied %s to %s\n',fmap_files(run).name, sprintf('vdm5_sc%s_phase_run_%02d.nii',participant_id,cnt))
+
+                    cnt = cnt+1;
+                end
+            end
             
         case 'FUNC:realign_unwarp_one_ses'
             % for i = 1:length(ses)
@@ -302,8 +326,8 @@ function varargout = efcp_imana(what, varargin)
                 end
                 smpj_plot_mov_corr(rp_list)
             end
-
-        case 'FUNC:move_realigned_images'          
+        
+        case 'FUNC:move_realigned_images'
             for i = 1:length(ses)
                 % Move images created by realign(+unwarp) into imaging_data
                 realigned_epi_files = dir(fullfile(baseDir, imagingRawDir, participant_id, sprintf('ses-%s', ses{i}), sprintf('%s%s_run_*.nii', prefix, participant_id)));
@@ -374,9 +398,9 @@ function varargout = efcp_imana(what, varargin)
                 spmj_bias_correct(P);
             end
             
-        case 'FUNC:coreg'                                                      
+        case 'FUNC:coreg'
             % coregister rbumean image to anatomical image for each session
-
+            
             % (1) Manually seed the functional/anatomical registration
             % - Open fsleyes
             % - Add anatomical image and b*mean*.nii (bias corrected mean) image to overlay
@@ -453,7 +477,7 @@ function varargout = efcp_imana(what, varargin)
                 spmj_makesamealign_nifti(char(P),char(Q));
             end
         
-        case 'FUNC:make_maskImage'       
+        case 'FUNC:make_maskImage'
             % Make mask images (noskull and gray_only) for 1st level glm
             for i = 1:length(ses)
                 epi_files = dir(fullfile(baseDir, imagingDir, participant_id, sprintf('ses-%s',ses{i}), [participant_id '_run_*.nii']));
@@ -500,6 +524,6 @@ function varargout = efcp_imana(what, varargin)
                 movefile(source,dest);
             end
     
-    end 
+    end
 
 end

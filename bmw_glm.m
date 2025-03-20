@@ -1,35 +1,16 @@
-function varargout = efcp_glm(what, varargin)
+function varargout = bmw_glm(what, varargin)
 
     % Use a different baseDir when using your local machine or the cbs
     % server. Add more directory if needed. Use single quotes ' and not
     % double quotes " because some spm function raise error with double
     % quotes
     if ismac
-        % baseDir = '/Volumes/Diedrichsen_data$/data/Chord_exp/EFC_patternfMRI';
-        baseDir = '/Users/alighavampour/Desktop/Projects/EFC_patternfMRI/data';
+        baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
     elseif isunix
-        baseDir = '/cifs/diedrichsen/data/Chord_exp/EFC_patternfMRI';
+        baseDir = '';
     else
         disp('Running on Windows or another OS');
     end
-    
-    % if isfolder('/cifs/diedrichsen/data/Chord_exp/ExtFlexChord/efc4/')
-    %     baseDir = '/cifs/diedrichsen/data/Chord_exp/ExtFlexChord/efc4/';
-    %     % 
-    %     % addpath(genpath('~/Documents/GitHub/dataframe/'))
-    %     % addpath(genpath('~/Documents/GitHub/spmj_tools/'))
-    %     % addpath(genpath('~/Documents/GitHub/rwls/'))
-    %     % addpath(genpath('~/Documents/MATLAB/spm12/'))
-    %     % addpath(genpath('~/Documents/GitHub/surfAnalysis/'))
-    %     % addpath(genpath('~/Documents/GitHub/surfing/surfing'))
-    %     % addpath(genpath('~/Documents/GitHub/region/'))
-    % 
-    % 
-    % elseif isfolder('/path/to/project/cifs/directory/')
-    %     baseDir = '/path/to/project/cifs/directory/';
-    % else
-    %     fprintf('Workdir not found. Mount or connect to server and try again.');
-    % end
     
     sn = [];
     ses = [];
@@ -50,309 +31,89 @@ function varargout = efcp_glm(what, varargin)
     pinfo = dload(fullfile(baseDir,'participants.tsv'));
 
     % get participant row from participant.tsv
-    subj_row = getrow(pinfo, pinfo.sn== sn);
+    participant_row = getrow(pinfo, pinfo.sn==sn);
     
     % get subj_id
-    participant_id = subj_row.participant_id{1};
+    participant_id = participant_row.participant_id{1};
     
     % get ses_id
     ses_id = sprintf('ses-%.2d', ses);
     
     % get runs (FuncRuns column needs to be in participants.tsv)    
-    runs = spmj_dotstr2array(subj_row.(sprintf('run_ses%d',ses)){1});
+    runs = spmj_dotstr2array(participant_row.(sprintf('run_ses%d',ses)){1});
     switch what
         case 'GLM:make_glm1'
             % run with hrf_params = [4.5 11 1 1 6 0 32]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'efc4_*.dat'));
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 'BimanualWrist_MR_*.dat'));
             D = dload(fullfile(dat_file.folder, dat_file.name));
-            
-            chords = unique(D.chordID);
+            rows_ses = ismember(D.BN,runs);
+            D = getrow(D, rows_ses);
+            angles = [0,60,120,180,240,300];
             
             events.BN = [];
             events.TN = [];
-            events.Onset = [];
-            events.Duration = [];
+            events.onset = [];
+            events.duration = [];
             events.eventtype = [];
-            events.chordID = [];
+            events.Uni_or_Bi = [];
+            events.hand = []; % 0: left, 1: right
+            events.angle_left = []; % 0, 60, 120, 180, 240, 300
+            events.angle_right = []; % 0, 60, 120, 180, 240, 300
             
-            for chordID = chords'
-                rows = D.chordID == chordID;
+            % LEFT HAND:
+            for i = 1:6
+                rows = D.Uni_or_Bi==0  & D.Hand==0 & D.targetAngle_L==angles(i);
                 events.BN = [events.BN; D.BN(rows)];
                 events.TN = [events.TN; D.TN(rows)];
-                events.Onset = [events.Onset; D.startTimeReal(rows)];
-                events.Duration = [events.Duration; repmat(10, [sum(rows), 1])];
-                events.chordID = [events.chordID; D.chordID(rows)];
-                events.eventtype = [events.eventtype; repmat({sprintf('chordID:%d', chordID)}, [sum(rows), 1])];
+                events.onset = [events.onset; D.startTimeReal(rows)];
+                events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('lhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(-1, [sum(rows), 1])];
             end
             
-            events = struct2table(events);
-            events.Onset = events.Onset ./ 1000;
-            events.Duration = events.Duration ./ 1000;
-            
-            varargout{1} = events;
-
-        case 'GLM:make_glm2'
-            % run with hrf param: [5 11 1 1 6 0 32]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'efc4_*.dat'));
-            D = dload(fullfile(dat_file.folder, dat_file.name));
-            
-            D.repetition = ones(length(D.TN), 1); % Initialize repetition column with 1
-
-            for i = 1:length(D.TN)
-                if i == 1
-                    D.repetition(i) = 1;
-                else
-                    if D.chordID(i) == D.chordID(i-1)
-                        D.repetition(i) = 2;
-                    end
-                end
+            % RIGHT HAND:
+            for i = 1:6
+                rows = D.Uni_or_Bi==0  & D.Hand==1 & D.targetAngle_R==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)];
+                events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('rhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(-1, [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(angles(i), [sum(rows), 1])];
             end
-    
-            events.BN = [];
-            events.TN = [];
-            events.Onset = [];
-            events.Duration = [];
-            events.eventtype = {};
-            events.chordID = [];
-            events.repetition = [];
-            
-            for rep = unique(D.repetition)'
-                for chordID = unique(D.chordID)'
-                    rows = (D.chordID == chordID) & (D.repetition == rep);
+
+            % BIMANUAL:
+            for i = 1:6
+                for j = 1:6
+                    rows = D.Uni_or_Bi==1 & D.targetAngle_L==angles(i) & D.targetAngle_R==angles(j);
                     events.BN = [events.BN; D.BN(rows)];
                     events.TN = [events.TN; D.TN(rows)];
-                    events.Onset = [events.Onset; D.startTimeReal(rows)];
-                    events.Duration = [events.Duration; repmat(100, [sum(rows),1])];
-                    events.repetition = [events.repetition; D.repetition(rows)];
-                    events.chordID = [events.chordID; D.chordID(rows)];
-                    events.eventtype = [events.eventtype; repmat({sprintf('chordID:%d,repetition:%d', chordID, rep)}, [sum(rows), 1])];
+                    events.onset = [events.onset; D.startTimeReal(rows)];
+                    events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                    events.eventtype = [events.eventtype; repmat({sprintf('bi:%d_%d',angles(i),angles(j))}, [sum(rows), 1])];
+                    events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                    events.hand = [events.hand; repmat(2, [sum(rows), 1])];
+                    events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                    events.angle_right = [events.angle_right; repmat(angles(j), [sum(rows), 1])];
                 end
             end
+            
             events = struct2table(events);
-            events.Onset = events.Onset / 1000;
-            events.Duration = events.Duration / 1000;
-            
-            varargout{1} = events;
-        
-        case 'GLM:make_glm3'
-            % run with hrf param: [5 11 1 1 1.5 0 32]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'efc4_*.dat'));
-            D = dload(fullfile(dat_file.folder, dat_file.name));
-            
-            D.repetition = ones(length(D.TN), 1); % Initialize repetition column with 1
-
-            for i = 1:length(D.TN)
-                if i == 1
-                    D.repetition(i) = 1;
-                else
-                    if D.chordID(i) == D.chordID(i-1)
-                        D.repetition(i) = 2;
-                    end
-                end
-            end
-    
-            events.BN = [];
-            events.TN = [];
-            events.Onset = [];
-            events.Duration = [];
-            events.eventtype = {};
-            events.chordID = [];
-            events.repetition = [];
-            
-            for rep = unique(D.repetition)'
-                for chordID = unique(D.chordID)'
-                    rows = (D.chordID == chordID) & (D.repetition == rep);
-                    events.BN = [events.BN; D.BN(rows)];
-                    events.TN = [events.TN; D.TN(rows)];
-                    events.Onset = [events.Onset; D.startTimeReal(rows)];
-                    events.Duration = [events.Duration; repmat(10, [sum(rows),1])];
-                    events.repetition = [events.repetition; D.repetition(rows)];
-                    events.chordID = [events.chordID; D.chordID(rows)];
-                    events.eventtype = [events.eventtype; repmat({sprintf('chordID:%d,repetition:%d', chordID, rep)}, [sum(rows), 1])];
-                end
-            end
-            events = struct2table(events);
-            events.Onset = events.Onset / 1000;
-            events.Duration = events.Duration / 1000;
-            
-            varargout{1} = events;
-
-        case 'GLM:make_glm4'
-            % run with hrf param: [4.5 11 1 1 6 0 32]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'efc4_*.dat'));
-            D = dload(fullfile(dat_file.folder, dat_file.name));
-            
-            D.repetition = ones(length(D.TN), 1); % Initialize repetition column with 1
-
-            for i = 1:length(D.TN)
-                if i == 1
-                    D.repetition(i) = 1;
-                else
-                    if D.chordID(i) == D.chordID(i-1)
-                        D.repetition(i) = 2;
-                    end
-                end
-            end
-    
-            events.BN = [];
-            events.TN = [];
-            events.Onset = [];
-            events.Duration = [];
-            events.eventtype = {};
-            events.chordID = [];
-            events.repetition = [];
-            
-            for rep = unique(D.repetition)'
-                for chordID = unique(D.chordID)'
-                    rows = (D.chordID == chordID) & (D.repetition == rep);
-                    events.BN = [events.BN; D.BN(rows)];
-                    events.TN = [events.TN; D.TN(rows)];
-                    events.Onset = [events.Onset; D.startTimeReal(rows)];
-                    events.Duration = [events.Duration; repmat(10, [sum(rows),1])];
-                    events.repetition = [events.repetition; D.repetition(rows)];
-                    events.chordID = [events.chordID; D.chordID(rows)];
-                    events.eventtype = [events.eventtype; repmat({sprintf('chordID:%d,repetition:%d', chordID, rep)}, [sum(rows), 1])];
-                end
-            end
-            events = struct2table(events);
-            events.Onset = events.Onset / 1000;
-            events.Duration = events.Duration / 1000;
-            
-            varargout{1} = events;
-
-        case 'GLM:make_glm5'
-            % run with hrf param: [4.5 11 1 1 1.5 0 32]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'efc4_*.dat'));
-            D = dload(fullfile(dat_file.folder, dat_file.name));
-            
-            D.repetition = ones(length(D.TN), 1); % Initialize repetition column with 1
-
-            for i = 1:length(D.TN)
-                if i == 1
-                    D.repetition(i) = 1;
-                else
-                    if D.chordID(i) == D.chordID(i-1)
-                        D.repetition(i) = 2;
-                    end
-                end
-            end
-    
-            events.BN = [];
-            events.TN = [];
-            events.Onset = [];
-            events.Duration = [];
-            events.eventtype = {};
-            events.chordID = [];
-            events.repetition = [];
-            
-            for rep = unique(D.repetition)'
-                for chordID = unique(D.chordID)'
-                    rows = (D.chordID == chordID) & (D.repetition == rep);
-                    events.BN = [events.BN; D.BN(rows)];
-                    events.TN = [events.TN; D.TN(rows)];
-                    events.Onset = [events.Onset; D.startTimeReal(rows)];
-                    events.Duration = [events.Duration; repmat(10, [sum(rows),1])];
-                    events.repetition = [events.repetition; D.repetition(rows)];
-                    events.chordID = [events.chordID; D.chordID(rows)];
-                    events.eventtype = [events.eventtype; repmat({sprintf('chordID:%d,repetition:%d', chordID, rep)}, [sum(rows), 1])];
-                end
-            end
-            events = struct2table(events);
-            events.Onset = events.Onset / 1000;
-            events.Duration = events.Duration / 1000;
-            
-            varargout{1} = events;
-
-        case 'GLM:make_glm6'
-            % run with hrf param: [4.5 11 1 1 1 0 32]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'efc4_*.dat'));
-            D = dload(fullfile(dat_file.folder, dat_file.name));
-            
-            D.repetition = ones(length(D.TN), 1); % Initialize repetition column with 1
-
-            for i = 1:length(D.TN)
-                if i == 1
-                    D.repetition(i) = 1;
-                else
-                    if D.chordID(i) == D.chordID(i-1)
-                        D.repetition(i) = 2;
-                    end
-                end
-            end
-    
-            events.BN = [];
-            events.TN = [];
-            events.Onset = [];
-            events.Duration = [];
-            events.eventtype = {};
-            events.chordID = [];
-            events.repetition = [];
-            
-            for rep = unique(D.repetition)'
-                for chordID = unique(D.chordID)'
-                    rows = (D.chordID == chordID) & (D.repetition == rep);
-                    events.BN = [events.BN; D.BN(rows)];
-                    events.TN = [events.TN; D.TN(rows)];
-                    events.Onset = [events.Onset; D.startTimeReal(rows)];
-                    events.Duration = [events.Duration; repmat(10, [sum(rows),1])];
-                    events.repetition = [events.repetition; D.repetition(rows)];
-                    events.chordID = [events.chordID; D.chordID(rows)];
-                    events.eventtype = [events.eventtype; repmat({sprintf('chordID:%d,repetition:%d', chordID, rep)}, [sum(rows), 1])];
-                end
-            end
-            events = struct2table(events);
-            events.Onset = events.Onset / 1000;
-            events.Duration = events.Duration / 1000;
-            
-            varargout{1} = events;
-        
-        case 'GLM:make_glm7'
-            % run with hrf param: [5 11 1 1 1 0 32]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'efc4_*.dat'));
-            D = dload(fullfile(dat_file.folder, dat_file.name));
-            
-            D.repetition = ones(length(D.TN), 1); % Initialize repetition column with 1
-
-            for i = 1:length(D.TN)
-                if i == 1
-                    D.repetition(i) = 1;
-                else
-                    if D.chordID(i) == D.chordID(i-1)
-                        D.repetition(i) = 2;
-                    end
-                end
-            end
-    
-            events.BN = [];
-            events.TN = [];
-            events.Onset = [];
-            events.Duration = [];
-            events.eventtype = {};
-            events.chordID = [];
-            events.repetition = [];
-            
-            for rep = unique(D.repetition)'
-                for chordID = unique(D.chordID)'
-                    rows = (D.chordID == chordID) & (D.repetition == rep);
-                    events.BN = [events.BN; D.BN(rows)];
-                    events.TN = [events.TN; D.TN(rows)];
-                    events.Onset = [events.Onset; D.startTimeReal(rows)];
-                    events.Duration = [events.Duration; repmat(10, [sum(rows),1])];
-                    events.repetition = [events.repetition; D.repetition(rows)];
-                    events.chordID = [events.chordID; D.chordID(rows)];
-                    events.eventtype = [events.eventtype; repmat({sprintf('chordID:%d,repetition:%d', chordID, rep)}, [sum(rows), 1])];
-                end
-            end
-            events = struct2table(events);
-            events.Onset = events.Onset / 1000;
-            events.Duration = events.Duration / 1000;
+            events.onset = events.onset ./ 1000;
+            events.duration = events.duration ./ 1000;
             
             varargout{1} = events;
 
         case 'GLM:make_event'
             operation  = sprintf('GLM:make_glm%d', glm);
             
-            events = efcp_glm(operation, 'sn', sn, 'ses', ses);
+            events = bmw_glm(operation, 'sn', sn, 'ses', ses);
             events = events(ismember(events.BN, runs), :);
             
             % export:
@@ -421,10 +182,10 @@ function varargout = efcp_glm(what, varargin)
                     J.sess(run).cond(regr).name = regressors{regr};
                     
                     % Define durationDuration(regr));
-                    J.sess(run).cond(regr).duration = Dd.Duration(rows); % needs to be in seconds
+                    J.sess(run).cond(regr).duration = Dd.duration(rows); % needs to be in seconds
                     
                     % Define onset
-                    J.sess(run).cond(regr).onset  = Dd.Onset(rows);
+                    J.sess(run).cond(regr).onset  = Dd.onset(rows);
                     
                     % Define time modulator
                     % Add a regressor that account for modulation of
@@ -650,14 +411,14 @@ function varargout = efcp_glm(what, varargin)
             end
 
             for ses = 1:2
-                efcp_glm('GLM:make_event', 'sn', sn, 'glm', glm, 'ses', ses)
-                efcp_glm('GLM:design', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'ses', ses, 'derivs', derivs)
-                efcp_glm('GLM:estimate', 'sn', sn, 'glm', glm, 'ses', ses)
-                efcp_glm('GLM:T_contrasts', 'sn', sn, 'glm', glm, 'ses', ses)
-                efcp_glm('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT', 'ses', ses)
-                efcp_anat('ROI:define', 'sn', sn, 'glm', glm, 'ses', ses)
-                efcp_glm('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'ses', ses)
-                efcp_glm('GLM:change_SPM.mat_format', 'sn', 1, 'glm', glm, 'ses', ses)
+                bmw_glm('GLM:make_event', 'sn', sn, 'glm', glm, 'ses', ses)
+                bmw_glm('GLM:design', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'ses', ses, 'derivs', derivs)
+                bmw_glm('GLM:estimate', 'sn', sn, 'glm', glm, 'ses', ses)
+                bmw_glm('GLM:T_contrasts', 'sn', sn, 'glm', glm, 'ses', ses)
+                bmw_glm('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT', 'ses', ses)
+                bmw_anat('ROI:define', 'sn', sn, 'glm', glm, 'ses', ses)
+                bmw_glm('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'ses', ses)
+                bmw_glm('GLM:change_SPM.mat_format', 'sn', 1, 'glm', glm, 'ses', ses)
             end
         case 'SURF:vol2surf'
             currentDir = pwd;
