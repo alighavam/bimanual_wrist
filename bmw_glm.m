@@ -43,10 +43,10 @@ function varargout = bmw_glm(what, varargin)
     runs = spmj_dotstr2array(participant_row.(sprintf('run_ses%d',ses)){1});
     switch what
         case 'GLM:make_glm1'
-            % run with hrf_params = [4.5 11 1 1 6 0 32]
+            % run with hrf_params = [7 11 1 1 6 0 32]
             dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'BimanualWrist_MR_*.dat'));
             D = dload(fullfile(dat_file.folder, dat_file.name));
-
+            
             angles = [0,60,120,180,240,300];
             
             events.BN = [];

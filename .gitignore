@@ -3,3 +3,6 @@
 *.asv
 /target
 *.nii
+/figures
+/SUITPy
+/surfAnalysisPy
