@@ -407,7 +407,7 @@ function varargout = bmw_glm(what, varargin)
             if exist(spm_file, 'file')
                 delete(spm_file);
             end
-
+            
             for ses = 1:2
                 bmw_glm('GLM:make_event', 'sn', sn, 'glm', glm, 'ses', ses)
                 bmw_glm('GLM:design', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'ses', ses, 'derivs', derivs)
