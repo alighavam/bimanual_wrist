@@ -44,10 +44,9 @@ function varargout = bmw_glm(what, varargin)
     switch what
         case 'GLM:make_glm1'
             % run with hrf_params = [4.5 11 1 1 6 0 32]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 'BimanualWrist_MR_*.dat'));
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'BimanualWrist_MR_*.dat'));
             D = dload(fullfile(dat_file.folder, dat_file.name));
-            rows_ses = ismember(D.BN,runs);
-            D = getrow(D, rows_ses);
+
             angles = [0,60,120,180,240,300];
             
             events.BN = [];
@@ -400,7 +399,6 @@ function varargout = bmw_glm(what, varargin)
             cd(currentDir)
             
         case 'GLM:all'
-            
             spm_get_defaults('cmdline', true);  % Suppress GUI prompts, no request for overwirte
             
             % Check for and delete existing SPM.mat file
@@ -417,8 +415,8 @@ function varargout = bmw_glm(what, varargin)
                 bmw_glm('GLM:T_contrasts', 'sn', sn, 'glm', glm, 'ses', ses)
                 bmw_glm('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT', 'ses', ses)
                 bmw_anat('ROI:define', 'sn', sn, 'glm', glm, 'ses', ses)
-                bmw_glm('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'ses', ses)
-                bmw_glm('GLM:change_SPM.mat_format', 'sn', 1, 'glm', glm, 'ses', ses)
+                bmw_glm('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm, 'ses', ses)
+                bmw_glm('GLM:change_SPM.mat_format', 'sn', sn, 'glm', glm, 'ses', ses)
             end
         case 'SURF:vol2surf'
             currentDir = pwd;
@@ -537,41 +535,41 @@ function varargout = bmw_glm(what, varargin)
             time_series.y_res = y_res;
 
 %             D = spmj_get_ons_struct(SPM);
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'efc4_*.dat'));
-            Dd = dload(fullfile(dat_file.folder, dat_file.name));
+            % dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'BimanualWrist_MR_*.dat'));
+            % Dd = dload(fullfile(dat_file.folder, dat_file.name));
             
-            idx = ismember(Dd.BN, runs);
+            % idx = ismember(Dd.BN, runs);
             
-            D = [];
-            D.ons = (Dd.startTimeReal(idx) / 1000) / TR;
-            D.ons = D.ons + (Dd.BN(idx) - 1) * nScan;
-            D.BN = Dd.BN(idx);
-            D.chordID = Dd.chordID(idx);     
+            % D = [];
+            % D.ons = (Dd.startTimeReal(idx) / 1000) / TR;
+            % D.ons = D.ons + (Dd.BN(idx) - 1) * nScan;
+            % D.BN = Dd.BN(idx);
+            % D.chordID = Dd.chordID(idx);     
 %             D.cue = Dd.cue;
 %             D.stimFinger = Dd.stimFinger;
             
-            for r=1:size(y_raw,2)
-                for i=1:size(D.BN,1)
-                    D.y_adj(i,:)=cut(y_adj(:,r),pre,round(D.ons(i)),post,'padding','nan')';
-                    D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i)),post,'padding','nan')';
-                    D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i)),post,'padding','nan')';
-                    D.y_raw(i,:)=cut(y_raw(:,r),pre,round(D.ons(i)),post,'padding','nan')';
-%                     D.regr(i, :, :)=cut(regrC,pre,round(D.ons(i)),post,'padding','nan')';
-                end
-                
-                % Add the event and region information to the structure. 
-                len = size(D.ons,1);                
-                D.SN        = ones(len,1)*sn;
-                D.region    = ones(len,1)*r;
-                D.name      = repmat({R{r}.name},len,1);
-                D.hem       = repmat({R{r}.hem},len,1);
-%                 D.type      = D.event; 
-                T           = addstruct(T,D);
-            end
+%             for r=1:size(y_raw,2)
+%                 for i=1:size(D.BN,1)
+%                     D.y_adj(i,:)=cut(y_adj(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+%                     D.y_hat(i,:)=cut(y_hat(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+%                     D.y_res(i,:)=cut(y_res(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+%                     D.y_raw(i,:)=cut(y_raw(:,r),pre,round(D.ons(i)),post,'padding','nan')';
+% %                     D.regr(i, :, :)=cut(regrC,pre,round(D.ons(i)),post,'padding','nan')';
+%                 end
+% 
+%                 % Add the event and region information to the structure. 
+%                 len = size(D.ons,1);                
+%                 D.SN        = ones(len,1)*sn;
+%                 D.region    = ones(len,1)*r;
+%                 D.name      = repmat({R{r}.name},len,1);
+%                 D.hem       = repmat({R{r}.hem},len,1);
+% %                 D.type      = D.event; 
+%                 T           = addstruct(T,D);
+%             end
             save(fullfile(baseDir, regDir, participant_id, ses_id, sprintf('time_series_glm%d.mat', glm)),'-struct','time_series','-v7');
-            save(fullfile(baseDir, regDir, participant_id, ses_id, sprintf('hrf_glm%d.mat', glm)),'T'); 
-            varargout{1} = T;
-            varargout{2} = y_adj;
+            % save(fullfile(baseDir, regDir, participant_id, ses_id, sprintf('hrf_glm%d.mat', glm)),'T'); 
+            % varargout{1} = T;
+            % varargout{2} = y_adj;
             
             cd(currentDir)
     end
