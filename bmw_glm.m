@@ -301,7 +301,7 @@ function varargout = bmw_glm(what, varargin)
             
             currentDir = pwd;
             
-        case 'GLM:estimate'      % estimate beta values
+        case 'GLM:estimate' % estimate beta values
 
             currentDir = pwd;
 
@@ -382,7 +382,7 @@ function varargout = bmw_glm(what, varargin)
                     cname_idx = length(SPM.xCon);
                 end
                 SPM = spm_contrasts(SPM,1:length(SPM.xCon));
-                save('SPM.mat', 'SPM','-v7.3');
+                save('SPM.mat', 'SPM', '-v7');
                 % SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
                 % save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
     
@@ -392,7 +392,7 @@ function varargout = bmw_glm(what, varargin)
                     oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx));
                     newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
                     movefile(oldName, newName);
-                end % conditions (n, conName: con and spmT)
+                end
 
             end
 
@@ -488,7 +488,7 @@ function varargout = bmw_glm(what, varargin)
             
             cd(currentDir)
             
-        case 'HRF:ROI_hrf_get'                   % Extract raw and estimated time series from ROIs
+        case 'HRF:ROI_hrf_get' % Extract raw and estimated time series from ROIs
             
             currentDir = pwd;
             
@@ -574,3 +574,4 @@ function varargout = bmw_glm(what, varargin)
             cd(currentDir)
     end
 end
+
