@@ -1,4 +1,4 @@
-function varargout = bmw_glm(what, varargin)
+function varargout = bmw_glm_ss(what, varargin)
 
     % Use a different baseDir when using your local machine or the cbs
     % server. Add more directory if needed. Use single quotes ' and not
@@ -13,13 +13,12 @@ function varargout = bmw_glm(what, varargin)
     end
     
     sn = [];
-    ses = [];
     glm = [];
     type = 'spmT';
     atlas = 'ROI';
     % hrf_params = [4.5 11 1 1 6 0 32];
     derivs = [0, 0];
-    vararginoptions(varargin,{'sn', 'ses', 'type', 'glm', 'hrf_params', 'atlas','derivs'})
+    vararginoptions(varargin,{'sn', 'type', 'glm', 'hrf_params', 'atlas','derivs'})
     
     glmEstDir = 'glm';
     behavDir = 'behavioural';
@@ -36,15 +35,16 @@ function varargout = bmw_glm(what, varargin)
     % get subj_id
     participant_id = participant_row.participant_id{1};
     
-    % get ses_id
-    ses_id = sprintf('ses-%.2d', ses);
-    
-    % get runs (FuncRuns column needs to be in participants.tsv)    
-    runs = spmj_dotstr2array(participant_row.(sprintf('run_ses%d',ses)){1});
+    % define subject runs:
+    epi_files = dir(fullfile(baseDir, imagingDir, participant_id, sprintf('%s_run_*.nii',participant_id)));
+    runs = zeros(1,length(epi_files));
+    for i = 1:length(epi_files)
+        runs(i) = sscanf(epi_files(i).name, [participant_id '_run_%d.nii']);
+    end
     switch what
         case 'GLM:make_glm1'
             % run with hrf_params = [4 10]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, ses_id, 'BimanualWrist_MR_*.dat'));
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 'BimanualWrist_MR_*.dat'));
             D = dload(fullfile(dat_file.folder, dat_file.name));
             
             angles = [0,60,120,180,240,300];
@@ -112,11 +112,10 @@ function varargout = bmw_glm(what, varargin)
         case 'GLM:make_event'
             operation  = sprintf('GLM:make_glm%d', glm);
             
-            events = bmw_glm(operation, 'sn', sn, 'ses', ses);
-            events = events(ismember(events.BN, runs), :);
+            events = bmw_glm_ss(operation, 'sn', sn);
             
             % export:
-            output_folder = fullfile(baseDir, behavDir, participant_id, ses_id);
+            output_folder = fullfile(baseDir, behavDir, participant_id);
             writetable(events, fullfile(output_folder, sprintf('glm%d_events.tsv', glm)), 'FileType', 'text', 'Delimiter','\t')
             
         case 'GLM:design'
@@ -140,7 +139,7 @@ function varargout = bmw_glm(what, varargin)
             % D = dload(fullfile(baseDir,behavDir,subj_id, sprintf('smp2_%d.dat', sn)));
             events_file = sprintf('glm%d_events.tsv', glm);
             
-            Dd = dload(fullfile(baseDir, behavDir, participant_id, ses_id, events_file));
+            Dd = dload(fullfile(baseDir, behavDir, participant_id, events_file));
             
             regressors = unique(Dd.eventtype);
             nRegr = length(regressors);
@@ -148,7 +147,7 @@ function varargout = bmw_glm(what, varargin)
             % init J
             J = [];
             T = [];
-            J.dir = {fullfile(baseDir, sprintf('glm%d', glm), participant_id, ses_id)};
+            J.dir = {fullfile(baseDir, sprintf('glm%d', glm), participant_id)};
             J.timing.units = 'secs';
             J.timing.RT = 1;
             
@@ -160,7 +159,7 @@ function varargout = bmw_glm(what, varargin)
             % each TR
             J.timing.fmri_t0 = 1;
             
-            epi_files = dir(fullfile(baseDir, imagingDir, participant_id, ses_id, [participant_id '_run_*.nii']));
+            epi_files = dir(fullfile(baseDir, imagingDir, participant_id, [participant_id '_run_*.nii']));
             for run = runs
                 % Setup scans for current session
                 J.sess(run).scans = {fullfile(epi_files(run).folder, epi_files(run).name)};
@@ -273,7 +272,7 @@ function varargout = bmw_glm(what, varargin)
                 J.global = 'None';
 
                 % remove voxels involving non-neural tissue (e.g., skull)
-                J.mask = {fullfile(baseDir, anatomicalDir, participant_id, sprintf('rmask_noskull_ses-%.2d.nii',ses))};
+                J.mask = {fullfile(baseDir, anatomicalDir, participant_id, 'rmask_noskull.nii')};
                 
                 % Set threshold for brightness threshold for masking 
                 % If supplying explicit mask, set to 0  (default is 0.8)
@@ -281,7 +280,7 @@ function varargout = bmw_glm(what, varargin)
 
                 % Create map where non-sphericity correction must be
                 % applied
-                J.cvi_mask = {fullfile(baseDir, anatomicalDir, participant_id,  sprintf('rmask_gray_ses-%.2d.nii',ses))};
+                J.cvi_mask = {fullfile(baseDir, anatomicalDir, participant_id,  'rmask_gray.nii')};
 
                 % Method for non sphericity correction
                 J.cvi = 'fast';
@@ -314,7 +313,7 @@ function varargout = bmw_glm(what, varargin)
             end
 
 %             fprintf('- Doing glm%d estimation for subj %s\n', glm, day_id, subj_id);
-            subj_est_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id, ses_id);                
+            subj_est_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id);                
             SPM = load(fullfile(subj_est_dir,'SPM.mat'));
             SPM.SPM.swd = subj_est_dir;
 
@@ -332,7 +331,7 @@ function varargout = bmw_glm(what, varargin)
             % uses scipy.io.loadmat() which does not work with v7.3
             % structure formats. Therefore, I will change v7.3 with matlab
             % to v7 here.
-            subj_est_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id, ses_id);                
+            subj_est_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id);                
             SPM = load(fullfile(subj_est_dir,'SPM.mat'));
             save(fullfile(subj_est_dir,'SPM_v7.mat'), '-struct', 'SPM', '-v7');
             
@@ -352,7 +351,7 @@ function varargout = bmw_glm(what, varargin)
 
             % get the subject id folder name
             fprintf('Contrasts for participant %s\n', participant_id)
-            glm_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id, ses_id);
+            glm_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id);
 
             % load the SPM.mat file
             SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
@@ -382,10 +381,9 @@ function varargout = bmw_glm(what, varargin)
                     cname_idx = length(SPM.xCon);
                 end
                 SPM = spm_contrasts(SPM,1:length(SPM.xCon));
-                save('SPM.mat', 'SPM', '-v7');
                 % SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
                 % save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
-    
+                
                 % rename contrast images and spmT images
                 conName = {'con','spmT'};
                 for n = 1:numel(conName)
@@ -393,8 +391,8 @@ function varargout = bmw_glm(what, varargin)
                     newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
                     movefile(oldName, newName);
                 end
-
             end
+            save('SPM.mat', 'SPM', '-v7.3');
 
             cd(currentDir)
             
@@ -403,21 +401,20 @@ function varargout = bmw_glm(what, varargin)
             
             % Check for and delete existing SPM.mat file
             % spm_file = fullfile(baseDir, [glmEstDir num2str(glm)], ['subj' num2str(sn)], 'SPM.mat');
-            spm_file = fullfile(baseDir, [glmEstDir num2str(glm)], participant_id, ses_id, 'SPM.mat');
+            spm_file = fullfile(baseDir, [glmEstDir num2str(glm)], participant_id, 'SPM.mat');
             if exist(spm_file, 'file')
                 delete(spm_file);
             end
             
-            for ses = 1:2
-                bmw_glm('GLM:make_event', 'sn', sn, 'glm', glm, 'ses', ses)
-                bmw_glm('GLM:design', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'ses', ses, 'derivs', derivs)
-                bmw_glm('GLM:estimate', 'sn', sn, 'glm', glm, 'ses', ses)
-                bmw_glm('GLM:T_contrasts', 'sn', sn, 'glm', glm, 'ses', ses)
-                bmw_glm('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT', 'ses', ses)
-                bmw_anat('ROI:define', 'sn', sn, 'glm', glm, 'ses', ses)
-                bmw_glm('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm, 'ses', ses)
-                bmw_glm('GLM:change_SPM.mat_format', 'sn', sn, 'glm', glm, 'ses', ses)
-            end
+            bmw_glm_ss('GLM:make_event', 'sn', sn, 'glm', glm)
+            bmw_glm_ss('GLM:design', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'derivs', [0,0])
+            bmw_glm_ss('GLM:estimate', 'sn', sn, 'glm', glm)
+            bmw_glm_ss('GLM:T_contrasts', 'sn', sn, 'glm', glm)
+            bmw_glm_ss('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT')
+            bmw_anat('ROI:define', 'sn', sn, 'glm', glm)
+            bmw_glm_ss('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm)
+            % bmw_glm_ss('GLM:change_SPM.mat_format', 'sn', sn, 'glm', glm)
+
         case 'SURF:vol2surf'
             currentDir = pwd;
             
@@ -427,7 +424,7 @@ function varargout = bmw_glm(what, varargin)
             cols = {};
             if strcmp(type, 'spmT')
 %                 filename = ['spmT_' id '.func.gii'];
-                files = dir(fullfile(baseDir, glmEstDir, participant_id, ses_id, 'spmT_*.nii'));
+                files = dir(fullfile(baseDir, glmEstDir, participant_id, 'spmT_*.nii'));
                 for f = 1:length(files)
                     fprintf([files(f).name '\n'])
                     V{f} = fullfile(files(f).folder, files(f).name);
@@ -435,7 +432,7 @@ function varargout = bmw_glm(what, varargin)
                 end
             elseif strcmp(type, 'beta')
                 SPM = load(fullfile(baseDir, glmEstDir, participant_id, 'SPM.mat')); SPM=SPM.SPM;
-                files = dir(fullfile(baseDir, glmEstDir, participant_id, ses_id, 'beta_*.nii'));
+                files = dir(fullfile(baseDir, glmEstDir, participant_id, 'beta_*.nii'));
                 files = files(SPM.xX.iC);
                 for f = 1:length(files)
                     fprintf([files(f).name '\n'])
@@ -443,21 +440,21 @@ function varargout = bmw_glm(what, varargin)
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'psc')
-                files = dir(fullfile(baseDir, glmEstDir, participant_id, ses_id, 'psc_*.nii'));
+                files = dir(fullfile(baseDir, glmEstDir, participant_id, 'psc_*.nii'));
                 for f = 1:length(files)
                     fprintf([files(f).name '\n'])
                     V{f} = fullfile(files(f).folder, files(f).name);
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'con')
-                files = dir(fullfile(baseDir, glmEstDir, participant_id, ses_id, 'con_*.nii'));
+                files = dir(fullfile(baseDir, glmEstDir, participant_id, 'con_*.nii'));
                 for f = 1:length(files)
                     fprintf([files(f).name '\n'])
                     V{f} = fullfile(files(f).folder, files(f).name);
                     cols{f} = files(f).name;
                 end
             elseif strcmp(type, 'res')
-                V{1} = fullfile(baseDir, glmEstDir, participant_id, ses_id, 'ResMS.nii');
+                V{1} = fullfile(baseDir, glmEstDir, participant_id, 'ResMS.nii');
                 cols{1} = 'ResMS';
             end
 
@@ -479,12 +476,12 @@ function varargout = bmw_glm(what, varargin)
             GL = surf_vol2surf(c1L,c2L,V,'anatomicalStruct','CortexLeft', 'exclude_thres', 0.9, 'faces', hemLpial.faces);
             GL = surf_makeFuncGifti(GL.cdata,'anatomicalStruct', 'CortexLeft', 'columnNames', cols);
     
-            save(GL, fullfile(baseDir, wbDir, participant_id, [glmEstDir '.' ses_id '.'  type '.L.func.gii']))
+            save(GL, fullfile(baseDir, wbDir, participant_id, [glmEstDir '.'  type '.L.func.gii']))
     
             GR = surf_vol2surf(c1R,c2R,V,'anatomicalStruct','CortexRight', 'exclude_thres', 0.9, 'faces', hemRpial.faces);
             GR = surf_makeFuncGifti(GR.cdata,'anatomicalStruct', 'CortexRight', 'columnNames', cols);
 
-            save(GR, fullfile(baseDir, wbDir, participant_id, [glmEstDir '.' ses_id '.' type '.R.func.gii']))
+            save(GR, fullfile(baseDir, wbDir, participant_id, [glmEstDir '.' type '.R.func.gii']))
             
             cd(currentDir)
             
@@ -497,11 +494,11 @@ function varargout = bmw_glm(what, varargin)
             fprintf('Extracting region time series for participant %s...\n', participant_id);
             
             % load SPM.mat
-            cd(fullfile(glmDir, participant_id, ses_id));
+            cd(fullfile(glmDir, participant_id));
             SPM = load('SPM.mat'); SPM=SPM.SPM;
-
+            
             % load ROI definition (R)
-            R = load(fullfile(baseDir, regDir, participant_id, ses_id, sprintf('%s_%s_glm%d_region.mat', participant_id, atlas, glm))); R=R.R;
+            R = load(fullfile(baseDir, regDir, participant_id, sprintf('%s_%s_glm%d_region.mat', participant_id, atlas, glm))); R=R.R;
             
             % extract time series data
             [y_raw, y_adj, y_hat, y_res, B] = region_getts(SPM,R,'stats','mean');
@@ -509,7 +506,7 @@ function varargout = bmw_glm(what, varargin)
             time_series.y_adj = y_adj;
             time_series.y_hat = y_hat;
             time_series.y_res = y_res;
-            
+            save(fullfile(baseDir, regDir, participant_id, sprintf('time_series_glm%d.mat', glm)),'-struct','time_series','-v7');
             cd(currentDir)
     end
 end

@@ -203,10 +203,9 @@ function varargout = bmw_anat(what, varargin)
         case 'ROI:define'
             sn = [];
             glm = 1;
-            ses = 1;
             atlas = 'ROI';
             
-            vararginoptions(varargin,{'sn', 'atlas', 'glm', 'ses'});
+            vararginoptions(varargin,{'sn', 'atlas', 'glm'});
             
             if isfolder('/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32')
                 atlasDir = '/Volumes/diedrichsen_data$/data/Atlas_templates/fs_LR_32';
@@ -229,7 +228,7 @@ function varargout = bmw_anat(what, varargin)
                 for reg = 1:length(atlas_gii{h}.labels.name)
                     R{r}.white = fullfile(baseDir, wbDir, participant_id, [participant_id '.' Hem{h} '.white.32k.surf.gii']);
                     R{r}.pial = fullfile(baseDir, wbDir, participant_id, [participant_id '.' Hem{h} '.pial.32k.surf.gii']);
-                    R{r}.image = fullfile(baseDir, sprintf('glm%d',glm), participant_id, sprintf('ses-%.2d',ses), 'mask.nii');
+                    R{r}.image = fullfile(baseDir, sprintf('glm%d',glm), participant_id, 'mask.nii');
                     R{r}.linedef = [5 0 1];
                     key = atlas_gii{h}.labels.key(reg);
                     R{r}.location = find(atlas_gii{h}.cdata==key);
@@ -243,14 +242,14 @@ function varargout = bmw_anat(what, varargin)
             R = region_calcregions(R, 'exclude', [2 3; 2 4; 2 5; 4 5; 8 9; 2 8;...
                 11 12; 11 13; 11 14; 13 14; 17 18; 11 17], 'exclude_thres', .8);
             
-            output_path = fullfile(baseDir, regDir, participant_id, sprintf('ses-%.2d',ses));
+            output_path = fullfile(baseDir, regDir, participant_id);
             if ~exist(output_path, 'dir')
                 mkdir(output_path)
             end
             
-            Vol = fullfile(baseDir, sprintf('glm%d',glm), participant_id, sprintf('ses-%.2d',ses), 'mask.nii');
+            Vol = fullfile(baseDir, sprintf('glm%d',glm), participant_id, 'mask.nii');
             for r = 1:length(R)
-                img = region_saveasimg(R{r}, Vol, 'name', fullfile(baseDir, regDir, participant_id, sprintf('ses-%.2d',ses), sprintf('%s.%s.%s_glm%d.nii', atlas, R{r}.hem, R{r}.name, glm)));
+                img = region_saveasimg(R{r}, Vol, 'name', fullfile(baseDir, regDir, participant_id, sprintf('%s.%s.%s_glm%d.nii', atlas, R{r}.hem, R{r}.name, glm)));
             end
             
             save(fullfile(output_path, sprintf('%s_%s_glm%d_region.mat', participant_id, atlas, glm)), 'R');
