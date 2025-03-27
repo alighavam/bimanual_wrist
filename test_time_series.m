@@ -1,10 +1,10 @@
-sn = 7;
+sn = 6;
 T = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/ROI/s' num2str(sn,'%.2d') '/time_series_glm1.mat']);
 spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm1/s' num2str(sn,'%.2d') '/SPM.mat']);
 SPM = spm_file.SPM;
 
 %%
-runs = 1:10;
+runs = 1:size(T.y_raw,1)/740;
 roi = 2;
 
 for run = runs
