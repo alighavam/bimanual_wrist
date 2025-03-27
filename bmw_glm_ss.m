@@ -429,6 +429,7 @@ function varargout = bmw_glm_ss(what, varargin)
             T.name = cellstr(string(T.name));
             contrasts = unique(T.name);
             
+            % Per condition contrasts:
             for c = 1:length(contrasts)
                 contrast_name = contrasts{c};
                 xcon = zeros(size(SPM.xX.X,2), 1);
@@ -457,6 +458,38 @@ function varargout = bmw_glm_ss(what, varargin)
                     movefile(oldName, newName);
                 end
             end
+            
+            % Custom contrasts:
+            contrasts = {'lhand','rhand','bi'};
+            for c = 1:length(contrasts)
+                contrast_name = contrasts{c};
+                xcon = zeros(size(SPM.xX.X,2), 1);
+                xcon(contains(T.name, contrast_name)) = 1;
+                xcon = xcon / sum(xcon);
+                if ~isfield(SPM, 'xCon')
+                    SPM.xCon = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+                    cname_idx = 1;
+                elseif sum(strcmp(contrast_name, {SPM.xCon.name})) > 0
+                    idx = find(strcmp(contrast_name, {SPM.xCon.name}));
+                    SPM.xCon(idx) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+                    cname_idx = idx;
+                else
+                    SPM.xCon(end+1) = spm_FcUtil('Set', contrast_name, 'T', 'c', xcon, SPM.xX.xKXs);
+                    cname_idx = length(SPM.xCon);
+                end
+                SPM = spm_contrasts(SPM,1:length(SPM.xCon));
+                % SPM = rmfield(SPM,'xVi'); % 'xVi' take up a lot of space and slows down code!
+                % save(fullfile(glm_dir, 'SPM_light.mat'), 'SPM')
+                
+                % rename contrast images and spmT images
+                conName = {'con','spmT'};
+                for n = 1:numel(conName)
+                    oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx));
+                    newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
+                    movefile(oldName, newName);
+                end
+            end
+
             save('SPM.mat', 'SPM', '-v7.3');
 
             cd(currentDir)
