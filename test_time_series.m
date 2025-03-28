@@ -24,15 +24,16 @@ for run = runs
 end
 
 %% Fit hrf params - redo GLM:
+baseDir = '/Users/alighavam/Desktop/Projects/bimanual_wrist/data/fMRI';
+
 sn = 4;
 glm = 2;
 
-T = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/ROI/s' num2str(sn,'%.2d') '/time_series_glm' num2str(glm) '.mat']);
-spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm' num2str(glm) '/s' num2str(sn,'%.2d') '/SPM.mat']);
+% spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm' num2str(glm) '/s' num2str(sn,'%.2d') '/SPM.mat']);
+spm_file = load(fullfile(baseDir,['glm' num2str(glm)], ['s' num2str(sn,'%.2d')], 'SPM.mat'));
 SPM = spm_file.SPM;
 % load ROI definition (R)
-% R = load(fullfile(baseDir, regDir, participant_id, sprintf('s%s_%s_glm%d_region.mat', num2str(sn,'%.2d'), atlas, glm))); R=R.R;
-R = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/ROI/s' num2str(sn,'%.2d') sprintf('/s%s_ROI_glm%d_region.mat', num2str(sn,'%.2d'), glm)]);
+R = load(fullfile(baseDir, 'ROI', ['s' num2str(sn,'%.2d')], sprintf('s%s_ROI_glm%d_region.mat', num2str(sn,'%.2d'), glm))); 
 R=R.R;
 
 region_data = region_getdata(SPM.xY.VY,R);
