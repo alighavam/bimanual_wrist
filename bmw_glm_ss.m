@@ -673,6 +673,32 @@ function varargout = bmw_glm_ss(what, varargin)
             time_series.y_res = y_res;
             save(fullfile(baseDir, regDir, participant_id, sprintf('time_series_glm%d.mat', glm)),'-struct','time_series','-v7');
             cd(currentDir)
+            
+            % Get onset structure, cut-out the trials of choice, and plot evoked
+            % response
+            figure;
+            D = spmj_get_ons_struct(SPM);
+            r = 2;
+            pre = 8;
+            post = 21;
+            for i=1:size(D.block,1)
+                D.y_adj(i,:)=cut(time_series.y_adj(:,2),pre,round(D.ons(i)),post,'padding','nan')';
+                D.y_hat(i,:)=cut(time_series.y_hat(:,2),pre,round(D.ons(i)),post,'padding','nan')';
+                D.y_res(i,:)=cut(time_series.y_res(:,2),pre,round(D.ons(i)),post,'padding','nan')';
+            end
+            
+            T = D; %getrow(D,mod(D.num,2)==0); % Get the first onset for each double 
+            traceplot([-pre:post],T.y_adj,'errorfcn','stderr'); % ,
+            hold on;
+            traceplot([-pre:post],T.y_hat,'linestyle',':',...
+                    'linewidth',3); %
+            drawline([-7,0,7,14,21],'dir','vert','linestyle',':');
+            
+            drawline([0],'dir','vert','linestyle','--');
+            drawline([0],'dir','horz','linestyle','-');
+            hold off;
+            xlabel('TR');
+            ylabel('activation');
     end
 end
 
