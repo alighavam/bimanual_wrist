@@ -25,9 +25,10 @@ end
 
 %% Fit hrf params - redo GLM:
 % baseDir = '/Users/alighavam/Desktop/Projects/bimanual_wrist/data/fMRI';
-baseDir = '/Users/ali/Desktop/Projects/bimanual_wrist/data';
+% baseDir = '/Users/ali/Desktop/Projects/bimanual_wrist/data';
+baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
 
-sn = 6;
+sn = 8;
 glm = 2;
 
 % spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm' num2str(glm) '/s' num2str(sn,'%.2d') '/SPM.mat']);
@@ -37,13 +38,13 @@ SPM = spm_file.SPM;
 R = load(fullfile(baseDir, 'ROI', ['s' num2str(sn,'%.2d')], sprintf('s%s_ROI_glm%d_region.mat', num2str(sn,'%.2d'), glm))); 
 R=R.R;
 
-% region_data = region_getdata(SPM.xY.VY,R);
-region_data = load('/Users/ali/Desktop/Projects/bimanual_wrist/data/region_data_s04.mat'); region_data=region_data.region_data;
+region_data = region_getdata(SPM.xY.VY,R);
+% region_data = load('/Users/ali/Desktop/Projects/bimanual_wrist/data/region_data_s04.mat'); region_data=region_data.region_data;
 
 %%
 
 r = 2;
-hrf_params = [8 12 1 1 1.2 0 32];
+hrf_params = [8 13 1 1 1.2 0 32];
 pre = 8;
 post = 22;
 run = 1;
@@ -96,9 +97,9 @@ figure;
 D = spmj_get_ons_struct(SPM);
 Yadj = Yres+Yhat; 
 for i=1:size(D.block,1)
-    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i))-1,post,'padding','nan')';
-    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i))-1,post,'padding','nan')';
-    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i))-1,post,'padding','nan')';
+    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i)),post,'padding','nan')';
+    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i)),post,'padding','nan')';
+    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i)),post,'padding','nan')';
 end
 
 T = getrow(D,mod(D.num,2)==1); % Get the first onset for each double 

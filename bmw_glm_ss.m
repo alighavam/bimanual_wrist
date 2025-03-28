@@ -16,8 +16,8 @@ function varargout = bmw_glm_ss(what, varargin)
     glm = [];
     type = 'spmT';
     atlas = 'ROI';
-    % hrf_params = [4.5 11 1 1 6 0 32];
     derivs = [0, 0];
+    hrf_params = [8 13 1 1 1.2 0 32];
     vararginoptions(varargin,{'sn', 'type', 'glm', 'hrf_params', 'atlas','derivs'})
     
     glmEstDir = 'glm';
@@ -175,7 +175,6 @@ function varargout = bmw_glm_ss(what, varargin)
             varargout{1} = events;
         
         case 'GLM:make_glm3'
-            % run with hrf_params = [7 16 1 1 1 0 32]
             dat_file = dir(fullfile(baseDir, behavDir, participant_id, 'BimanualWrist_MR_*.dat'));
             D = dload(fullfile(dat_file.folder, dat_file.name));
             D = getrow(D, ismember(D.BN,runs));
