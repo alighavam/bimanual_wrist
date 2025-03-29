@@ -346,7 +346,7 @@ function varargout = bmw_glm_ss(what, varargin)
                 end
 
                 % Specify high pass filter
-                J.sess(run).hpf = Inf;
+                J.sess(run).hpf = 64;
                 
                 % J.sess(run).multi
                 % Purpose: Specifies multiple conditions for a session. Usage: It is used

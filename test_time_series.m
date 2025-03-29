@@ -1,4 +1,4 @@
-sn = 4;
+sn = 7;
 T = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/ROI/s' num2str(sn,'%.2d') '/time_series_glm1.mat']);
 spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm1/s' num2str(sn,'%.2d') '/SPM.mat']);
 SPM = spm_file.SPM;
@@ -28,8 +28,8 @@ end
 % baseDir = '/Users/ali/Desktop/Projects/bimanual_wrist/data';
 baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
 
-sn = 8;
-glm = 2;
+sn = 7;
+glm = 3;
 
 % spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm' num2str(glm) '/s' num2str(sn,'%.2d') '/SPM.mat']);
 spm_file = load(fullfile(baseDir,['glm' num2str(glm)], ['s' num2str(sn,'%.2d')], 'SPM.mat'));
@@ -44,10 +44,10 @@ region_data = region_getdata(SPM.xY.VY,R);
 %%
 
 r = 2;
-hrf_params = [8 13 1 1 1.2 0 32];
+hrf_params = [8 13 1 1 6 0 32];
 pre = 8;
 post = 22;
-run = 1;
+run = 7;
 
 Yraw = region_data{r}; % Pick out data as a T x P matrix 
 
