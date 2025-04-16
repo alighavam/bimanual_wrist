@@ -6,3 +6,6 @@
 /figures
 /SUITPy
 /surfAnalysisPy
+*.pyc
+*.csv
+*.h5
