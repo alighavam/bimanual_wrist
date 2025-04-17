@@ -73,71 +73,72 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
 	# ACQUIRE_HRF,			///< 8 Non mandatory state, for use in scanner to hold recording
 	# END_TRIAL,				///< 9 Absorbant State: Trial is finished
     
-    # list of conditions:
-    conds = pd.DataFrame(columns=['cond', 'Uni_or_Bi', 'Hand', 'targetAngle_L', 'targetAngle_R', 'type'])
-    conds = {
-            
+    tmp_left = {
+        'cond': ['left_0', 'left_60', 'left_120', 'left_180', 'left_240', 'left_300'],
+        'reach_type': ['unimanual', 'unimanual', 'unimanual', 'unimanual', 'unimanual', 'unimanual'],
+        'Uni_or_Bi': [0, 0, 0, 0, 0, 0],
+        'Hand': [0, 0, 0, 0, 0, 0],
+        'targetAngle_L': [0, 60, 120, 180, 240, 300],
+        'targetAngle_R': [-1, -1, -1, -1, -1, -1],
     }
 
-    conds = {'cond': 'left_0', 'Uni_or_Bi': 0, 'Hand': 0, 'targetAngle_L': 0, 'type': 'none',
-             'cond': 'left_60', 'Uni_or_Bi': 0, 'Hand': 0, 'targetAngle_L': 60, 'type': 'none',
-             'cond': 'left_120', 'Uni_or_Bi': 0, 'Hand': 0, 'targetAngle_L': 120, 'type': 'none',
-             'cond': 'left_180', 'Uni_or_Bi': 0, 'Hand': 0, 'targetAngle_L': 180, 'type': 'none',
-             'cond': 'left_240', 'Uni_or_Bi': 0, 'Hand': 0, 'targetAngle_L': 240, 'type': 'none',
-             'cond': 'left_300', 'Uni_or_Bi': 0, 'Hand': 0, 'targetAngle_L': 300, 'type': 'none',
+    tmp_right = {
+        'cond': ['right_0', 'right_60', 'right_120', 'right_180', 'right_240', 'right_300'],
+        'reach_type': ['unimanual', 'unimanual', 'unimanual', 'unimanual', 'unimanual', 'unimanual'],
+        'Uni_or_Bi': [0, 0, 0, 0, 0, 0],
+        'Hand': [1, 1, 1, 1, 1, 1],
+        'targetAngle_L': [-1, -1, -1, -1, -1, -1],
+        'targetAngle_R': [0, 60, 120, 180, 240, 300],
+    }
 
-             'cond': 'right_0', 'Uni_or_Bi': 0, 'Hand': 1, 'targetAngle_R': 0, 'type': 'none',
-             'cond': 'right_60', 'Uni_or_Bi': 0, 'Hand': 1, 'targetAngle_R': 60, 'type': 'none',
-             'cond': 'right_120', 'Uni_or_Bi': 0, 'Hand': 1, 'targetAngle_R': 120, 'type': 'none',
-             'cond': 'right_180', 'Uni_or_Bi': 0, 'Hand': 1, 'targetAngle_R': 180, 'type': 'none',
-             'cond': 'right_240', 'Uni_or_Bi': 0, 'Hand': 1, 'targetAngle_R': 240, 'type': 'none',
-             'cond': 'right_300', 'Uni_or_Bi': 0, 'Hand': 1, 'targetAngle_R': 300, 'type': 'none',
-             
-             'cond': 'bimanual_0_0', 'Uni_or_Bi': 1, 'targetAngle_L': 0, 'targetAngle_R': 0, 'type': 'matched',
-             'cond': 'bimanual_0_60', 'Uni_or_Bi': 1, 'targetAngle_L': 0, 'targetAngle_R': 60, 'type': 'unrelated',
-             'cond': 'bimanual_0_120', 'Uni_or_Bi': 1, 'targetAngle_L': 0, 'targetAngle_R': 120, 'type': 'unrelated',
-             'cond': 'bimanual_0_180', 'Uni_or_Bi': 1, 'targetAngle_L': 0, 'targetAngle_R': 180, 'type': 'mirror',
-             'cond': 'bimanual_0_240', 'Uni_or_Bi': 1, 'targetAngle_L': 0, 'targetAngle_R': 240, 'type': 'unrelated',
-             'cond': 'bimanual_0_300', 'Uni_or_Bi': 1, 'targetAngle_L': 0, 'targetAngle_R': 300, 'type': 'unrelated',
-             'cond': 'bimanual_60_0', 'Uni_or_Bi': 1, 'targetAngle_L': 60, 'targetAngle_R': 0, 'type': 'unrelated',
-             'cond': 'bimanual_60_60', 'Uni_or_Bi': 1, 'targetAngle_L': 60, 'targetAngle_R': 60, 'type': 'matched',
-             'cond': 'bimanual_60_120', 'Uni_or_Bi': 1, 'targetAngle_L': 60, 'targetAngle_R': 120, 'type': 'mirror',
-             'cond': 'bimanual_60_180', 'Uni_or_Bi': 1, 'targetAngle_L': 60, 'targetAngle_R': 180, 'type': 'unrelated',
-             'cond': 'bimanual_60_240', 'Uni_or_Bi': 1, 'targetAngle_L': 60, 'targetAngle_R': 240, 'type': 'mirror-diagonal',
-             'cond': 'bimanual_60_300', 'Uni_or_Bi': 1, 'targetAngle_L': 60, 'targetAngle_R': 300, 'type': 'unrelated',
-             'cond': 'bimanual_120_0', 'Uni_or_Bi': 1, 'targetAngle_L': 120, 'targetAngle_R': 0, 'type': 'unrelated',
-             'cond': 'bimanual_120_60', 'Uni_or_Bi': 1, 'targetAngle_L': 120, 'targetAngle_R': 60, 'type': 'mirror',
-             'cond': 'bimanual_120_120', 'Uni_or_Bi': 1, 'targetAngle_L': 120, 'targetAngle_R': 120, 'type': 'matched',
-             'cond': 'bimanual_120_180', 'Uni_or_Bi': 1, 'targetAngle_L': 120, 'targetAngle_R': 180, 'type': 'unrelated',
-             'cond': 'bimanual_120_240', 'Uni_or_Bi': 1, 'targetAngle_L': 120, 'targetAngle_R': 240, 'type': 'unrelated',
-             'cond': 'bimanual_120_300', 'Uni_or_Bi': 1, 'targetAngle_L': 120, 'targetAngle_R': 300, 'type': 'mirror-diagonal',
-             'cond': 'bimanual_180_0', 'Uni_or_Bi': 1, 'targetAngle_L': 180, 'targetAngle_R': 0, 'type': 'mirror',
-             'cond': 'bimanual_180_60', 'Uni_or_Bi': 1, 'targetAngle_L': 180, 'targetAngle_R': 60, 'type': 'unrelated',
-             'cond': 'bimanual_180_120', 'Uni_or_Bi': 1, 'targetAngle_L': 180, 'targetAngle_R': 120, 'type': 'unrelated',
-             'cond': 'bimanual_180_180', 'Uni_or_Bi': 1, 'targetAngle_L': 180, 'targetAngle_R': 180, 'type': 'matched',
-             'cond': 'bimanual_180_240', 'Uni_or_Bi': 1, 'targetAngle_L': 180, 'targetAngle_R': 240, 'type': 'unrelated',
-             'cond': 'bimanual_180_300', 'Uni_or_Bi': 1, 'targetAngle_L': 180, 'targetAngle_R': 300, 'type': 'unrelated',
-             'cond': 'bimanual_240_0', 'Uni_or_Bi': 1, 'targetAngle_L': 240, 'targetAngle_R': 0, 'type': 'unrelated',
-             'cond': 'bimanual_240_60', 'Uni_or_Bi': 1, 'targetAngle_L': 240, 'targetAngle_R': 60, 'type': 'mirror-diagonal',
-             'cond': 'bimanual_240_120', 'Uni_or_Bi': 1, 'targetAngle_L': 240, 'targetAngle_R': 120, 'type': 'unrelated',
-             'cond': 'bimanual_240_180', 'Uni_or_Bi': 1, 'targetAngle_L': 240, 'targetAngle_R': 180, 'type': 'unrelated',
-             'cond': 'bimanual_240_240', 'Uni_or_Bi': 1, 'targetAngle_L': 240, 'targetAngle_R': 240, 'type': 'matched',
-             'cond': 'bimanual_240_300', 'Uni_or_Bi': 1, 'targetAngle_L': 240, 'targetAngle_R': 300, 'type': 'mirror',
-             'cond': 'bimanual_300_0', 'Uni_or_Bi': 1, 'targetAngle_L': 300, 'targetAngle_R': 0, 'type': 'unrelated',
-             'cond': 'bimanual_300_60', 'Uni_or_Bi': 1, 'targetAngle_L': 300, 'targetAngle_R': 60, 'type': 'unrelated',
-             'cond': 'bimanual_300_120', 'Uni_or_Bi': 1, 'targetAngle_L': 300, 'targetAngle_R': 120, 'type': 'mirror-diagonal',
-             'cond': 'bimanual_300_180', 'Uni_or_Bi': 1, 'targetAngle_L': 300, 'targetAngle_R': 180, 'type': 'unrelated',
-             'cond': 'bimanual_300_240', 'Uni_or_Bi': 1, 'targetAngle_L': 300, 'targetAngle_R': 240, 'type': 'mirror',
-             'cond': 'bimanual_300_300', 'Uni_or_Bi': 1, 'targetAngle_L': 300, 'targetAngle_R': 300, 'type': 'matched'}
+    tmp_bimanual = {
+        'cond': ['bimanual_0_0', 'bimanual_0_60', 'bimanual_0_120', 'bimanual_0_180', 'bimanual_0_240', 'bimanual_0_300',
+                'bimanual_60_0', 'bimanual_60_60', 'bimanual_60_120', 'bimanual_60_180', 'bimanual_60_240', 'bimanual_60_300',
+                'bimanual_120_0', 'bimanual_120_60', 'bimanual_120_120', 'bimanual_120_180', 'bimanual_120_240', 'bimanual_120_300',
+                'bimanual_180_0', 'bimanual_180_60', 'bimanual_180_120', 'bimanual_180_180', 'bimanual_180_240', 'bimanual_180_300',
+                'bimanual_240_0', 'bimanual_240_60', 'bimanual_240_120', 'bimanual_240_180', 'bimanual_240_240', 'bimanual_240_300',
+                'bimanual_300_0', 'bimanual_300_60', 'bimanual_300_120', 'bimanual_300_180', 'bimanual_300_240', 'bimanual_300_300'],
+        'reach_type': ['matched', 'unrelated', 'unrelated', 'mirror', 'unrelated', 'unrelated',
+                    'unrelated', 'matched', 'mirror', 'unrelated', 'mirror-diagonal', 'unrelated',
+                    'unrelated', 'mirror', 'matched', 'unrelated', 'unrelated', 'mirror-diagonal',
+                    'mirror', 'unrelated', 'unrelated', 'matched', 'unrelated', 'unrelated',
+                    'unrelated', 'mirror-diagonal', 'unrelated', 'unrelated', 'matched', 'mirror',
+                    'unrelated', 'unrelated', 'mirror-diagonal', 'unrelated', 'mirror', 'matched'],
+        'Uni_or_Bi': [1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1],
+        'Hand': [-1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1],
+        'targetAngle_L': [0, 0, 0, 0, 0, 0,
+                        60, 60, 60, 60, 60, 60,
+                        120, 120, 120, 120, 120, 120,
+                        180, 180, 180, 180, 180, 180,
+                        240, 240, 240, 240, 240, 240,
+                        300, 300, 300, 300, 300, 300],
+        'targetAngle_R': [0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300],
+    }
+
+    # combine the dictionaries:
+    combined = {k: tmp_left[k] + tmp_right[k] + tmp_bimanual[k] for k in tmp_left}
+    conds = pd.DataFrame(combined)
     
     # Load the training .dat file:
     dat_file_name = os.path.join(path['train_behavDir'], f's{sn:02d}', f'BimanualWrist_MR_{sn}.dat')
     dat = pd.read_table(dat_file_name)
 
     fMRI_sess = []
-    cond = []
-    type = []
-
     oldblock = -1
     # loop on trials:
     for i in range(dat.shape[0]):
@@ -155,17 +156,7 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
         D = pd.concat([D, C], ignore_index=True)
         
         # Whether data is from fMRI or training:
-        fMRI_sess.append(int(0))
-        
-        # find the condition in the list:
-        if dat['Uni_or_Bi'][i] == 0: # unimanual
-            Uni_or_Bi = 0
-            if dat['Hand'][i] == 0: # left hand
-                targetAngle_L = dat['targetAngle_L'][i]
-                
-            'cond': 'left_0', 'Uni_or_Bi': 0, 'Hand': 0, 'targetAngle_L': 0, 'type': 'none'
-            cond.append(conds['cond'][dat['Hand'][i]])
-            type.append(conds['type'][dat['Hand'][i]])
+        fMRI_sess.append(int(0))         
 
         # movemean the kinematics:
         trial_mov = mov[dat['TN'][i]-1]
@@ -201,6 +192,27 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
 
     D['fMRI_sess'] = fMRI_sess
 
+    cond_name = np.zeros(len(D))
+    reach_type = np.zeros(len(D))
+    for index, row in conds.iterrows():
+        if row.Uni_or_Bi == 0:  # unimanual
+            if row.Hand == 0:   # left hand
+                rows = ((D.Uni_or_Bi == 0) & (D.Hand == 0) & (D.targetAngle_L == row.targetAngle_L)).values.flatten()
+                cond_name[rows] = row.cond
+                reach_type[rows] = row.reach_type
+            else:   # right hand
+                rows = ((D.Uni_or_Bi == 0) & (D.Hand == 1) & (D.targetAngle_R == row.targetAngle_R)).values.flatten()
+                cond_name[rows] = row.cond
+                reach_type[rows] = row.reach_type
+        else:  # bimanual
+            rows = ((D.Uni_or_Bi == 1) & (D.targetAngle_L == row.targetAngle_L) & (D.targetAngle_R == row.targetAngle_R)).values.flatten()
+            cond_name[rows] = row.cond
+            reach_type[rows] = row.reach_type
+    D['cond_name'] = cond_name
+    D['reach_type'] = reach_type
+    D['cond_name'] = D['cond_name'].astype(str)
+    D['reach_type'] = D['reach_type'].astype(str)
+    
     # save the data frames:
     D.to_csv(os.path.join(path['anaDir'], f'bmw_train_{sn}.csv'), index=False)    
     D_mov.to_csv(os.path.join(path['anaDir'], f'bmw_train_{sn}_mov.csv'), index=False)
