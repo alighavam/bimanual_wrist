@@ -129,7 +129,7 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
                         0, 60, 120, 180, 240, 300,
                         0, 60, 120, 180, 240, 300],
     }
-
+    
     # combine the dictionaries:
     combined = {k: tmp_left[k] + tmp_right[k] + tmp_bimanual[k] for k in tmp_left}
     conds = pd.DataFrame(combined)
@@ -192,8 +192,8 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
 
     D['fMRI_sess'] = fMRI_sess
 
-    cond_name = np.zeros(len(D))
-    reach_type = np.zeros(len(D))
+    cond_name = np.empty(len(D), dtype=object)
+    reach_type = np.zeros(len(D), dtype=object)
     for index, row in conds.iterrows():
         if row.Uni_or_Bi == 0:  # unimanual
             if row.Hand == 0:   # left hand
@@ -295,9 +295,26 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
 
     D['fMRI_sess'] = fMRI_sess
     
-    # sort the dataframes by :
-    # D = D.sort_values(by='day', kind='mergesort')
-    # df_mov = df_mov.sort_values(by='day', kind='mergesort')
+    cond_name = np.empty(len(D), dtype=object)
+    reach_type = np.zeros(len(D), dtype=object)
+    for index, row in conds.iterrows():
+        if row.Uni_or_Bi == 0:  # unimanual
+            if row.Hand == 0:   # left hand
+                rows = ((D.Uni_or_Bi == 0) & (D.Hand == 0) & (D.targetAngle_L == row.targetAngle_L)).values.flatten()
+                cond_name[rows] = row.cond
+                reach_type[rows] = row.reach_type
+            else:   # right hand
+                rows = ((D.Uni_or_Bi == 0) & (D.Hand == 1) & (D.targetAngle_R == row.targetAngle_R)).values.flatten()
+                cond_name[rows] = row.cond
+                reach_type[rows] = row.reach_type
+        else:  # bimanual
+            rows = ((D.Uni_or_Bi == 1) & (D.targetAngle_L == row.targetAngle_L) & (D.targetAngle_R == row.targetAngle_R)).values.flatten()
+            cond_name[rows] = row.cond
+            reach_type[rows] = row.reach_type
+    D['cond_name'] = cond_name
+    D['reach_type'] = reach_type
+    D['cond_name'] = D['cond_name'].astype(str)
+    D['reach_type'] = D['reach_type'].astype(str)
 
     # save the data frames:
     D.to_csv(os.path.join(path['anaDir'], f'bmw_fMRI_{sn}.csv'), index=False)    
