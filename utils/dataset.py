@@ -60,7 +60,7 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     # empty dataframe to store the data:
     D = pd.DataFrame()
     D_mov = None
-
+    
     # states on mov file:
     # WAIT_TRIAL,				///< 0 Trial is not started yet, is default mode
 	# START_TRIAL,			///< 1 Start trial	
@@ -139,6 +139,11 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     dat = pd.read_table(dat_file_name)
 
     fMRI_sess = []
+    idx_preRT = []
+    idx_postRT = []
+    idx_gocue = []
+    idx_endReach = []
+
     oldblock = -1
     # loop on trials:
     for i in range(dat.shape[0]):
@@ -163,7 +168,13 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
         if smooth_win_sz > 0:
             # smooth the radius and angle signals:
             trial_mov[:, 5:9] = moving_average(trial_mov[:, 5:9], smooth_win_sz)
-        
+
+        # find the index of the go cue and end of reaching:
+        if C.GoodMovement:
+            state = trial_mov[:,2]
+            idx_gocue.append(np.where(state==5)[0])
+            idx_tmp2 = find_closest_index()
+
         # add the mov trial in the move dataframe:
         tmp = pd.DataFrame({'fMRI_sess': [0], 
                             'sn': [sn], 
