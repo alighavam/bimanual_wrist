@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from .please import *
+from .measures import *
 
 def movload(fname):
     # loads .mov files given the path of the file. The .mov files have a specific custom hence the need for a custom function
@@ -143,6 +144,8 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     idx_postRT = []
     idx_gocue = []
     idx_endReach = []
+    MD_left = []
+    MD_right = []
 
     oldblock = -1
     # loop on trials:
@@ -181,8 +184,8 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
             state = trial_mov[:,2]
             idx_gocue.append(np.where(state==5)[0][0])
             
-            dEndRadius_L = C.dEndRadius_L
-            dEndRadius_R = C.dEndRadius_R
+            dEndRadius_L = C.dEndRadius_L.values[0]
+            dEndRadius_R = C.dEndRadius_R.values[0]
 
             if dEndRadius_L > 0:
                 tmp_idx = find_closest_index(trial_mov[:, 5], dEndRadius_L)
@@ -197,6 +200,31 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
 
         # Find pre_RT and post_RT indices:
         # MAY DEVELOP LATER.
+
+        # Calculate mean deviation for the trial:
+        if C.GoodMovement[0]:
+            radius_l = trial_mov[:,5].flatten()[idx_gocue[i]:idx_endReach[i]]
+            radius_r = trial_mov[:,6].flatten()[idx_gocue[i]:idx_endReach[i]]
+            angle_l = trial_mov[:,7].flatten()[idx_gocue[i]:idx_endReach[i]]
+            angle_r = trial_mov[:,8].flatten()[idx_gocue[i]:idx_endReach[i]]
+
+            x_l = radius_l * np.cos(np.deg2rad(angle_l))
+            y_l = radius_l * np.sin(np.deg2rad(angle_l))
+            x_r = radius_r * np.cos(np.deg2rad(angle_r))
+            y_r = radius_r * np.sin(np.deg2rad(angle_r))
+
+            # left hand coords:
+            f_left = np.vstack((x_l, y_l)).T    # position of left hand
+            c_left = f_left[-1] - f_left[0]     # straight trajectory defined as position of go-cue and end of reach
+            MD_left.append(get_MD(f_left, c_left))
+            
+            # right hand coords:
+            f_right = np.vstack((x_r, y_r)).T
+            c_right = f_right[-1] - f_right[0]
+            MD_right.append(get_MD(f_right, c_right))
+        else:
+            MD_left.append(-1)
+            MD_right.append(-1)
 
         # flatten the mov dataframe:
         flat_rows = []
@@ -219,6 +247,8 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     D['fMRI_sess'] = fMRI_sess
     D['idx_gocue'] = idx_gocue
     D['idx_endReach'] = idx_endReach
+    D['MD_left'] = MD_left
+    D['MD_right'] = MD_right
 
     cond_name = np.empty(len(D), dtype=object)
     reach_type = np.zeros(len(D), dtype=object)
@@ -269,6 +299,10 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     dat = pd.read_table(dat_file_name)
     
     fMRI_sess = []
+    idx_preRT = []
+    idx_postRT = []
+    idx_gocue = []
+    idx_endReach = []
 
     oldblock = -1
     # loop on trials:
@@ -277,7 +311,7 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
             print(f'Processing block {dat["BN"][i]}')
             # load the .mov file:
             ext = int(dat['BN'][i])
-            mov = movload(os.path.join(path['train_behavDir'], f's{sn:02d}', f'BimanualWrist_MR_{sn}_{ext:02d}.mov'))
+            mov = movload(os.path.join(path['fMRI_behavDir'], f's{sn:02d}', f'BimanualWrist_MR_{sn}_{ext:02d}.mov'))
             oldblock = dat['BN'][i]
         print(f'Processing trial {dat["TN"][i]}')
         # trial routine:
@@ -294,7 +328,6 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
         if smooth_win_sz > 0:
             # smooth the radius and angle signals:
             trial_mov[:, 5:9] = moving_average(trial_mov[:, 5:9], smooth_win_sz)
-        
         # add the mov trial in the move dataframe:
         tmp = pd.DataFrame({'fMRI_sess': [1], 
                             'sn': [sn], 
@@ -302,6 +335,25 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
                             'TN': [dat['TN'][i]], 
                             'GoodMovement': [dat['GoodMovement'][i]], 
                             'mov': pd.Series([trial_mov], dtype='object')})
+        
+        # find the index of the go cue and end of reaching:
+        if C.GoodMovement[0]:
+            state = trial_mov[:,2]
+            idx_gocue.append(np.where(state==5)[0][0])
+            
+            dEndRadius_L = C.dEndRadius_L.values[0]
+            dEndRadius_R = C.dEndRadius_R.values[0]
+
+            if dEndRadius_L > 0:
+                tmp_idx = find_closest_index(trial_mov[:, 5], dEndRadius_L)
+            
+            if dEndRadius_R > 0:
+                tmp_idx = find_closest_index(trial_mov[:, 6], dEndRadius_R)
+            
+            idx_endReach.append(tmp_idx)
+        else:
+            idx_gocue.append(0)
+            idx_endReach.append(0)
         
         # flatten the mov dataframe:
         flat_rows = []
@@ -322,6 +374,8 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
             D_mov = pd.concat([D_mov, pd.DataFrame(flat_rows)], ignore_index=True)
 
     D['fMRI_sess'] = fMRI_sess
+    D['idx_gocue'] = idx_gocue
+    D['idx_endReach'] = idx_endReach
     
     cond_name = np.empty(len(D), dtype=object)
     reach_type = np.zeros(len(D), dtype=object)
