@@ -60,7 +60,7 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     # empty dataframe to store the data:
     D = pd.DataFrame()
     D_mov = None
-    
+
     # states on mov file:
     # WAIT_TRIAL,				///< 0 Trial is not started yet, is default mode
 	# START_TRIAL,			///< 1 Start trial	
@@ -168,13 +168,6 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
         if smooth_win_sz > 0:
             # smooth the radius and angle signals:
             trial_mov[:, 5:9] = moving_average(trial_mov[:, 5:9], smooth_win_sz)
-
-        # find the index of the go cue and end of reaching:
-        if C.GoodMovement:
-            state = trial_mov[:,2]
-            idx_gocue.append(np.where(state==5)[0])
-            idx_tmp2 = find_closest_index()
-
         # add the mov trial in the move dataframe:
         tmp = pd.DataFrame({'fMRI_sess': [0], 
                             'sn': [sn], 
@@ -183,6 +176,28 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
                             'GoodMovement': [dat['GoodMovement'][i]], 
                             'mov': pd.Series([trial_mov], dtype='object')})
         
+        # find the index of the go cue and end of reaching:
+        if C.GoodMovement[0]:
+            state = trial_mov[:,2]
+            idx_gocue.append(np.where(state==5)[0][0])
+            
+            dEndRadius_L = C.dEndRadius_L
+            dEndRadius_R = C.dEndRadius_R
+
+            if dEndRadius_L > 0:
+                tmp_idx = find_closest_index(trial_mov[:, 5], dEndRadius_L)
+            
+            if dEndRadius_R > 0:
+                tmp_idx = find_closest_index(trial_mov[:, 6], dEndRadius_R)
+            
+            idx_endReach.append(tmp_idx)
+        else:
+            idx_gocue.append(0)
+            idx_endReach.append(0)
+
+        # Find pre_RT and post_RT indices:
+        # MAY DEVELOP LATER.
+
         # flatten the mov dataframe:
         flat_rows = []
         for _, row in tmp.iterrows():
@@ -202,6 +217,8 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
             D_mov = pd.concat([D_mov, pd.DataFrame(flat_rows)], ignore_index=True)
 
     D['fMRI_sess'] = fMRI_sess
+    D['idx_gocue'] = idx_gocue
+    D['idx_endReach'] = idx_endReach
 
     cond_name = np.empty(len(D), dtype=object)
     reach_type = np.zeros(len(D), dtype=object)
