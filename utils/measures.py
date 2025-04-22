@@ -49,7 +49,7 @@ def get_ET(mov: np.ndarray):
 
     return mov[end_idx, 2] - mov[start_idx, 2] - 600
 
-def get_MD(mov: np.ndarray, baseline_threshold: float, fGain: list[float], global_gain: float, fs: int, hold_time: float):
+def get_MD(f, straight_trajectory):
     '''
     Mean deviation captures the simultaneity of the forces of the fingers in trial. It is defined as the average of 
     the norm of the deviation of the forces from the ideal trajectory.
@@ -70,40 +70,19 @@ def get_MD(mov: np.ndarray, baseline_threshold: float, fGain: list[float], globa
         fs: the sampling frequency of the force data
         hold_time: the time to hold the target in ms
     '''
-
-    WAIT_EXEC = 3
-
-    # find the beginning of the execution period:
-    start_idx = np.where(mov[:, 0] == WAIT_EXEC)[0][0]
-    end_idx = np.where(mov[:, 0] == WAIT_EXEC)[0][-1]
-
-    # get the differential forces - five columns:
-    force = mov[:, 13:18]
+    c = straight_trajectory
     
-    # apply the gains:
-    force = force * fGain * global_gain
-
-    # find the first time any finger exits the baseline zone:
-    for i in range(start_idx, end_idx+1):
-        if np.any(np.abs(force[i, :]) > baseline_threshold):
-            RT_idx = i
-            break
-
-    # select the portion of force from RT to end_idx-hold_time:
-    force = force[RT_idx:end_idx-int(hold_time/1000*fs), :]
-    
-    # calculate the ideal trajectory:
-    c = force[-1, :] - force[0, :]
-
     # calculate mean deviation:
     deviation = []
-    for i in range(1,force.shape[0]):
+    for i in range(1,f.shape[0]):
         # force vector:
-        tmp_force = force[i, :] - force[0, :]
+        tmp = f[i, :] - f[0, :]
+
         # projection:
-        projection = np.dot(tmp_force, c) / np.dot(c, c) * c
+        projection = np.dot(tmp, c) / np.dot(c, c) * c
+
         # deviation:
-        deviation.append(np.linalg.norm(tmp_force - projection))
+        deviation.append(np.linalg.norm(tmp - projection))
 
     return np.mean(deviation)
 
