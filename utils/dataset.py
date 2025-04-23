@@ -432,7 +432,46 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     D.to_csv(os.path.join(path['anaDir'], f'bmw_fMRI_{sn}.csv'), index=False)    
     D_mov.to_csv(os.path.join(path['anaDir'], f'bmw_fMRI_{sn}_mov.csv'), index=False)
 
+def make_all_dataframe(df_list, sn_list, path):
+    """
+    This function takes a list of dataframes and a list of subject numbers and concatenates them into a single dataframe.
     
-                
+    params:
+        df_list: list of dataframes
+        sn_list: list of subject numbers
+    """
+    # Concatenate all dataframes in the list
+    bmw_all = pd.concat(df_list, ignore_index=True)
+    
+    # make sn column from sn_list:
+    bmw_all['sn'] = np.concatenate([[sn] * len(df) for sn, df in zip(sn_list, df_list)])
 
+    # save the dataframe:
+    bmw_all.to_csv(os.path.join(path['anaDir'], 'bmw_all.csv'), index=False)
+    
+    return bmw_all
 
+def make_summary_dataframe(path):
+    """
+    This function takes a list of dataframes and a list of subject numbers and concatenates them into a single dataframe.
+    
+    params:
+        df_list: list of dataframes
+        sn_list: list of subject numbers
+    """
+    # Concatenate all dataframes in the list
+    bmw_all = pd.read_csv(os.path.join(path['anaDir'], 'bmw_all.csv'))
+    bmw_all = bmw_all[bmw_all['GoodMovement'] == 1]
+    
+    # group by:
+    bmw = bmw_all.groupby(['sn', 'cond_name', 'reach_type']).agg(
+        RT=('mov_2', lambda x: np.mean(x)),
+        ET=('mov_3', lambda x: np.mean(x)),
+        MD_left=('MD_left', lambda x: np.mean(x)),
+        MD_right=('MD_right', lambda x: np.mean(x))
+    ).reset_index()
+
+    # save the dataframe:
+    bmw.to_csv(os.path.join(path['anaDir'], 'bmw.csv'), index=False)
+    
+    return bmw
