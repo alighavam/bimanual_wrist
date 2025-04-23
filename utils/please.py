@@ -128,3 +128,13 @@ def draw_board(ax, radius=5):
                                 target['radius']*np.sin(np.deg2rad(target['angle'])) + target['y_offset']),
                                 radius=target['sz'], color=target['color'])
         ax.add_patch(circle)
+
+def make_it_pretty(ax):
+    # Make it pretty:
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_linewidth(1)
+    ax.spines['bottom'].set_linewidth(1)
+
+    ax.spines["left"].set_bounds(ax.get_ylim()[0], ax.get_ylim()[-1])
+    ax.spines["bottom"].set_bounds(ax.get_xticks()[0], ax.get_xticks()[-1])
