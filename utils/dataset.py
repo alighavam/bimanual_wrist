@@ -464,13 +464,24 @@ def make_summary_dataframe(path):
     bmw_all = bmw_all[bmw_all['GoodMovement'] == 1]
     
     # group by:
-    bmw = bmw_all.groupby(['sn', 'cond_name', 'reach_type']).agg(
-        RT=('mov_2', lambda x: np.mean(x)),
-        ET=('mov_3', lambda x: np.mean(x)),
+    bmw = bmw_all.groupby(['sn', 'cond_name']).agg(
+        Uni_or_Bi=('Uni_or_Bi', 'first'),
+        Hand=('Hand', 'first'),
+        targetAngle_L=('targetAngle_L', 'first'),
+        targetAngle_R=('targetAngle_R', 'first'),
+        time2plan=('time2plan', 'first'),
+        dEndRadius_L=('dEndRadius_L', 'first'),
+        dEndRadius_R=('dEndRadius_R', 'first'),
+        dEndAngle_L=('dEndAngle_L', 'first'),
+        dEndAngle_R=('dEndAngle_R', 'first'),
+        fMRI_sess=('fMRI_sess', 'first'),
+        reach_type=('reach_type', 'first'),
+        RT=('RT', lambda x: np.median(x)),
+        MT=('MT', lambda x: np.median(x)),
         MD_left=('MD_left', lambda x: np.mean(x)),
         MD_right=('MD_right', lambda x: np.mean(x))
     ).reset_index()
-
+    
     # save the dataframe:
     bmw.to_csv(os.path.join(path['anaDir'], 'bmw.csv'), index=False)
     

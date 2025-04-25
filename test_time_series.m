@@ -28,7 +28,7 @@ end
 % baseDir = '/Users/ali/Desktop/Projects/bimanual_wrist/data';
 baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
 
-sn = 7;
+sn = 4;
 glm = 3;
 
 % spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm' num2str(glm) '/s' num2str(sn,'%.2d') '/SPM.mat']);
@@ -44,7 +44,7 @@ region_data = region_getdata(SPM.xY.VY,R);
 %%
 
 r = 2;
-hrf_params = [8 13 1 1 6 0 32];
+hrf_params = [8 14 1 1 6 0 32];
 pre = 8;
 post = 22;
 run = 7;
