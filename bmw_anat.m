@@ -17,6 +17,11 @@ function varargout = bmw_anat(what, varargin)
     SPMhome = spm('dir');
     
     pinfo = dload(fullfile(baseDir,'participants.tsv'));
+
+    sn=[];
+    vararginoptions(varargin,{'sn'})
+    participant_row = getrow(pinfo,pinfo.sn== sn);
+    participant_id = participant_row.participant_id{1};
     
     switch(what)
         case 'BIDS:move_unzip_raw_anat'
@@ -65,13 +70,23 @@ function varargout = bmw_anat(what, varargin)
             % delete the compressed file:
             delete(output_file);
         
+        case 'ANAT:reslice_LPI'
+            % Reslice anatomical image within LPI coordinate systems
+            % get subj row from participants.tsv
+            
+            % (1) Reslice anatomical image to set it within LPI co-ordinate frames
+            source  = fullfile(baseDir, anatomicalDir, participant_id, sprintf('%s_T1w_raw.nii', participant_id));
+            dest    = fullfile(baseDir, anatomicalDir, participant_id,sprintf('%s_T1w_LPI.nii', participant_id));
+            spmj_reslice_LPI(source,'name', dest);
+            
+            fprintf('Manually retrieve the location of the anterior commissure (x,y,z) before continuing\n')
         
         case 'ANAT:center_ac' 
             % recenter to AC (manually retrieve coordinates)
             % Before running this step you need to manually fill in the AC
             % coordinates in the participants.tsv file
             % run spm display to get the AC coordinates
-
+            
             sn=[];
             vararginoptions(varargin,{'sn'})
             if isempty(sn)
