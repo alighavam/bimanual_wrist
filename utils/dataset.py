@@ -45,7 +45,7 @@ def trial_routine(row):
 
     return C
     
-def subject_routine(sn, path, smooth_win_sz=0, fs=200):
+def subject_routine_train(sn, path, smooth_win_sz=0, fs=200):
     """
     This function is used to preprocess the behavioural data of a subject
     
@@ -137,7 +137,7 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     conds = pd.DataFrame(combined)
     
     # Load the training .dat file:
-    dat_file_name = os.path.join(path['train_behavDir'], f's{sn:02d}', f'BimanualWrist_MR_{sn}.dat')
+    dat_file_name = os.path.join(path['train_behavDir'], f's{sn}', f's{sn}_train.dat')
     dat = pd.read_table(dat_file_name)
 
     fMRI_sess = []
@@ -155,7 +155,7 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
             # print(f'Processing block {dat["BN"][i]}')
             # load the .mov file:
             ext = int(dat['BN'][i])
-            mov = movload(os.path.join(path['train_behavDir'], f's{sn:02d}', f'BimanualWrist_MR_{sn}_{ext:02d}.mov'))
+            mov = movload(os.path.join(path['train_behavDir'], f's{sn}', f's{sn}_train_{ext:02d}.mov'))
             oldblock = dat['BN'][i]
         # print(f'Processing trial {dat["TN"][i]}')
         # trial routine:
@@ -273,9 +273,10 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     D['reach_type'] = D['reach_type'].astype(str)
     
     # save the data frames:
-    D.to_csv(os.path.join(path['anaDir'], f'bmw_train_{sn}.csv'), index=False)    
-    D_mov.to_csv(os.path.join(path['anaDir'], f'bmw_train_{sn}_mov.csv'), index=False)
+    D.to_csv(os.path.join(path['anaDir'], f's{sn}_train.csv'), index=False)    
+    D_mov.to_csv(os.path.join(path['anaDir'], f's{sn}_train_mov.csv'), index=False)
 
+def subject_routine_fMRI(sn, path, smooth_win_sz=0, fs=200):
     # ===========================================================================
     #  HANDLING THE fMRI BEHAVIOURAL DATA:
     # ===========================================================================
@@ -294,9 +295,70 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
 	# GIVE_FEEDBACK,			///< 7 Show feedback 
 	# ACQUIRE_HRF,			///< 8 Non mandatory state, for use in scanner to hold recording
 	# END_TRIAL,				///< 9 Absorbant State: Trial is finished
+    
+    tmp_left = {
+        'cond': ['left_0', 'left_60', 'left_120', 'left_180', 'left_240', 'left_300'],
+        'reach_type': ['unimanual', 'unimanual', 'unimanual', 'unimanual', 'unimanual', 'unimanual'],
+        'Uni_or_Bi': [0, 0, 0, 0, 0, 0],
+        'Hand': [0, 0, 0, 0, 0, 0],
+        'targetAngle_L': [0, 60, 120, 180, 240, 300],
+        'targetAngle_R': [-1, -1, -1, -1, -1, -1],
+    }
+
+    tmp_right = {
+        'cond': ['right_0', 'right_60', 'right_120', 'right_180', 'right_240', 'right_300'],
+        'reach_type': ['unimanual', 'unimanual', 'unimanual', 'unimanual', 'unimanual', 'unimanual'],
+        'Uni_or_Bi': [0, 0, 0, 0, 0, 0],
+        'Hand': [1, 1, 1, 1, 1, 1],
+        'targetAngle_L': [-1, -1, -1, -1, -1, -1],
+        'targetAngle_R': [0, 60, 120, 180, 240, 300],
+    }
+
+    tmp_bimanual = {
+        'cond': ['bimanual_0_0', 'bimanual_0_60', 'bimanual_0_120', 'bimanual_0_180', 'bimanual_0_240', 'bimanual_0_300',
+                'bimanual_60_0', 'bimanual_60_60', 'bimanual_60_120', 'bimanual_60_180', 'bimanual_60_240', 'bimanual_60_300',
+                'bimanual_120_0', 'bimanual_120_60', 'bimanual_120_120', 'bimanual_120_180', 'bimanual_120_240', 'bimanual_120_300',
+                'bimanual_180_0', 'bimanual_180_60', 'bimanual_180_120', 'bimanual_180_180', 'bimanual_180_240', 'bimanual_180_300',
+                'bimanual_240_0', 'bimanual_240_60', 'bimanual_240_120', 'bimanual_240_180', 'bimanual_240_240', 'bimanual_240_300',
+                'bimanual_300_0', 'bimanual_300_60', 'bimanual_300_120', 'bimanual_300_180', 'bimanual_300_240', 'bimanual_300_300'],
+        'reach_type': ['matched', 'unrelated', 'unrelated', 'mirror', 'unrelated', 'unrelated',
+                    'unrelated', 'matched', 'mirror', 'unrelated', 'mirror-diagonal', 'unrelated',
+                    'unrelated', 'mirror', 'matched', 'unrelated', 'unrelated', 'mirror-diagonal',
+                    'mirror', 'unrelated', 'unrelated', 'matched', 'unrelated', 'unrelated',
+                    'unrelated', 'mirror-diagonal', 'unrelated', 'unrelated', 'matched', 'mirror',
+                    'unrelated', 'unrelated', 'mirror-diagonal', 'unrelated', 'mirror', 'matched'],
+        'Uni_or_Bi': [1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1, 1],
+        'Hand': [-1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1],
+        'targetAngle_L': [0, 0, 0, 0, 0, 0,
+                        60, 60, 60, 60, 60, 60,
+                        120, 120, 120, 120, 120, 120,
+                        180, 180, 180, 180, 180, 180,
+                        240, 240, 240, 240, 240, 240,
+                        300, 300, 300, 300, 300, 300],
+        'targetAngle_R': [0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300,
+                        0, 60, 120, 180, 240, 300],
+    }
+    
+    # combine the dictionaries:
+    combined = {k: tmp_left[k] + tmp_right[k] + tmp_bimanual[k] for k in tmp_left}
+    conds = pd.DataFrame(combined)
 
     # Load the training .dat file:
-    dat_file_name = os.path.join(path['fMRI_behavDir'], f's{sn:02d}', f'BimanualWrist_MR_{sn}.dat')
+    dat_file_name = os.path.join(path['fMRI_behavDir'], f's{sn}', f's{sn}_scan.dat')
     dat = pd.read_table(dat_file_name)
     
     fMRI_sess = []
@@ -314,7 +376,7 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
             # print(f'Processing block {dat["BN"][i]}')
             # load the .mov file:
             ext = int(dat['BN'][i])
-            mov = movload(os.path.join(path['fMRI_behavDir'], f's{sn:02d}', f'BimanualWrist_MR_{sn}_{ext:02d}.mov'))
+            mov = movload(os.path.join(path['fMRI_behavDir'], f's{sn}', f's{sn}_scan_{ext:02d}.mov'))
             oldblock = dat['BN'][i]
         # print(f'Processing trial {dat["TN"][i]}')
         # trial routine:
@@ -429,8 +491,8 @@ def subject_routine(sn, path, smooth_win_sz=0, fs=200):
     D['reach_type'] = D['reach_type'].astype(str)
 
     # save the data frames:
-    D.to_csv(os.path.join(path['anaDir'], f'bmw_fMRI_{sn}.csv'), index=False)    
-    D_mov.to_csv(os.path.join(path['anaDir'], f'bmw_fMRI_{sn}_mov.csv'), index=False)
+    D.to_csv(os.path.join(path['anaDir'], f's{sn}_scan.csv'), index=False)    
+    D_mov.to_csv(os.path.join(path['anaDir'], f's{sn}_scan_mov.csv'), index=False)
 
 def make_all_dataframe(df_list, sn_list, path):
     """
