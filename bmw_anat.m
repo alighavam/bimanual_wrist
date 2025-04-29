@@ -19,7 +19,7 @@ function varargout = bmw_anat(what, varargin)
     pinfo = dload(fullfile(baseDir,'participants.tsv'));
 
     sn=[];
-    vararginoptions(varargin,{'sn'})
+    vararginoptions(varargin,{'sn','glm'})
     participant_row = getrow(pinfo,pinfo.sn== sn);
     participant_id = participant_row.participant_id{1};
     
@@ -214,7 +214,7 @@ function varargout = bmw_anat(what, varargin)
             outDir = fullfile(baseDir, surfacewbDir); 
             fs_dir = fullfile(baseDir,freesurferDir);
             surf_resliceFS2WB(subj_id, fs_dir, outDir, 'hemisphere', hemi, 'resolution', sprintf('%dk', res))
-        
+            
         case 'ROI:define'
             sn = [];
             glm = 1;

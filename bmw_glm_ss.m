@@ -175,7 +175,7 @@ function varargout = bmw_glm_ss(what, varargin)
             varargout{1} = events;
         
         case 'GLM:make_glm3'
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 'BimanualWrist_MR_*.dat'));
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 's*_scan.dat'));
             D = dload(fullfile(dat_file.folder, dat_file.name));
             D = getrow(D, ismember(D.BN,runs));
             
