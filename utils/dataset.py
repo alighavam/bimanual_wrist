@@ -533,7 +533,6 @@ def make_summary_dataframe(path):
         dEndRadius_R=('dEndRadius_R', 'first'),
         dEndAngle_L=('dEndAngle_L', 'first'),
         dEndAngle_R=('dEndAngle_R', 'first'),
-        fMRI_sess=('fMRI_sess', 'first'),
         reach_type=('reach_type', 'first'),
         RT=('RT', lambda x: np.median(x)),
         MT=('MT', lambda x: np.median(x)),
@@ -541,6 +540,9 @@ def make_summary_dataframe(path):
         MD_right=('MD_right', lambda x: np.mean(x))
     ).reset_index()
     
+    bmw['targetAngle_L'] = bmw['targetAngle_L'].astype(int)
+    bmw['targetAngle_R'] = bmw['targetAngle_R'].astype(int)
+
     # save the dataframe:
     bmw.to_csv(os.path.join(path['anaDir'], 'bmw.csv'), index=False)
     
