@@ -501,6 +501,7 @@ def make_all_dataframe(df_list, sn_list, path):
     params:
         df_list: list of dataframes
         sn_list: list of subject numbers
+        path: dict, the path to directories to access data
     """
     # Concatenate all dataframes in the list
     bmw_all = pd.concat(df_list, ignore_index=True)
@@ -515,11 +516,7 @@ def make_all_dataframe(df_list, sn_list, path):
 
 def make_summary_dataframe(path):
     """
-    This function takes a list of dataframes and a list of subject numbers and concatenates them into a single dataframe.
-    
-    params:
-        df_list: list of dataframes
-        sn_list: list of subject numbers
+        makes a summary dataframe from the bmw_all dataframe
     """
     # Concatenate all dataframes in the list
     bmw_all = pd.read_csv(os.path.join(path['anaDir'], 'bmw_all.csv'))
