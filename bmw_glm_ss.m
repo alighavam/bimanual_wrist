@@ -1,11 +1,12 @@
 function varargout = bmw_glm_ss(what, varargin)
-
     % Use a different baseDir when using your local machine or the cbs
     % server. Add more directory if needed. Use single quotes ' and not
     % double quotes " because some spm function raise error with double
     % quotes
     if ismac
-        baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
+        usr_path = userpath;
+        usr_path = usr_path(1:end-17);
+        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
     elseif isunix
         baseDir = '';
     else
@@ -175,6 +176,7 @@ function varargout = bmw_glm_ss(what, varargin)
             varargout{1} = events;
         
         case 'GLM:make_glm3'
+            % hrf_params = [8 13 1 1 1.2 0 32];
             dat_file = dir(fullfile(baseDir, behavDir, participant_id, 's*_scan.dat'));
             D = dload(fullfile(dat_file.folder, dat_file.name));
             D = getrow(D, ismember(D.BN,runs));
@@ -210,6 +212,72 @@ function varargout = bmw_glm_ss(what, varargin)
                 rows = D.Uni_or_Bi==0  & D.Hand==1 & D.targetAngle_R==angles(i);
                 events.BN = [events.BN; D.BN(rows)];
                 events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('rhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(-1, [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(angles(i), [sum(rows), 1])];
+            end
+            
+            % BIMANUAL:
+            for i = 1:length(angles)
+                for j = 1:length(angles)
+                    rows = D.Uni_or_Bi==1 & D.targetAngle_L==angles(i) & D.targetAngle_R==angles(j);
+                    events.BN = [events.BN; D.BN(rows)];
+                    events.TN = [events.TN; D.TN(rows)];
+                    events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                    events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                    events.eventtype = [events.eventtype; repmat({sprintf('bi:%d_%d',angles(i),angles(j))}, [sum(rows), 1])];
+                    events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                    events.hand = [events.hand; repmat(2, [sum(rows), 1])];
+                    events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                    events.angle_right = [events.angle_right; repmat(angles(j), [sum(rows), 1])];
+                end
+            end
+            events = struct2table(events);
+            events.onset = events.onset ./ 1000;
+            events.duration = events.duration ./ 1000;
+            
+            varargout{1} = events;
+        
+        case 'GLM:make_glm4'
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 's*_scan.dat'));
+            D = dload(fullfile(dat_file.folder, dat_file.name));
+            D = getrow(D, ismember(D.BN,runs));
+            
+            angles = [0,60,120,180,240,300];
+            
+            events.BN = [];
+            events.TN = [];
+            events.onset = [];
+            events.duration = [];
+            events.eventtype = [];
+            events.Uni_or_Bi = [];
+            events.hand = []; % 0: left, 1: right
+            events.angle_left = []; % 0, 60, 120, 180, 240, 300
+            events.angle_right = []; % 0, 60, 120, 180, 240, 300
+            
+            % LEFT HAND:
+            for i = 1:length(angles)
+                rows = D.Uni_or_Bi==0  & D.Hand==0 & D.targetAngle_L==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)];
+                events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('lhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(-1, [sum(rows), 1])];
+            end
+            
+            % RIGHT HAND:
+            for i = 1:length(angles)
+                rows = D.Uni_or_Bi==0  & D.Hand==1 & D.targetAngle_R==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
                 events.onset = [events.onset; D.startTimeReal(rows)];
                 events.duration = [events.duration; repmat(10, [sum(rows), 1])];
                 events.eventtype = [events.eventtype; repmat({sprintf('rhand:%d', angles(i))}, [sum(rows), 1])];
@@ -218,7 +286,7 @@ function varargout = bmw_glm_ss(what, varargin)
                 events.angle_left = [events.angle_left; repmat(-1, [sum(rows), 1])];
                 events.angle_right = [events.angle_right; repmat(angles(i), [sum(rows), 1])];
             end
-
+            
             % BIMANUAL:
             for i = 1:length(angles)
                 for j = 1:length(angles)
@@ -240,7 +308,7 @@ function varargout = bmw_glm_ss(what, varargin)
             events.duration = events.duration ./ 1000;
             
             varargout{1} = events;
-
+        
         case 'GLM:make_event'
             operation  = sprintf('GLM:make_glm%d', glm);
             
@@ -486,7 +554,7 @@ function varargout = bmw_glm_ss(what, varargin)
             glm_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id);
 
             % load the SPM.mat file
-            SPM = load(fullfile(glm_dir, 'SPM.mat')); SPM=SPM.SPM;
+            SPM = load(fullfile(glm_dir, 'SPM.mat'));
             
             if replace_xCon
                 SPM  = rmfield(SPM,'xCon');
@@ -557,7 +625,7 @@ function varargout = bmw_glm_ss(what, varargin)
                 end
             end
 
-            save('SPM.mat', 'SPM', '-v7.3');
+            save('SPM.mat', '-struct', 'SPM', '-v7.3');
 
             cd(currentDir)
             
@@ -579,7 +647,7 @@ function varargout = bmw_glm_ss(what, varargin)
             bmw_anat('ROI:define', 'sn', sn, 'glm', glm)
             bmw_glm_ss('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm)
             % bmw_glm_ss('GLM:change_SPM.mat_format', 'sn', sn, 'glm', glm)
-
+            
         case 'SURF:vol2surf'
             currentDir = pwd;
             
@@ -660,7 +728,7 @@ function varargout = bmw_glm_ss(what, varargin)
             
             % load SPM.mat
             cd(fullfile(glmDir, participant_id));
-            SPM = load('SPM.mat'); SPM=SPM.SPM;
+            SPM = load('SPM.mat');
             
             % load ROI definition (R)
             R = load(fullfile(baseDir, regDir, participant_id, sprintf('%s_%s_glm%d_region.mat', participant_id, atlas, glm))); R=R.R;
@@ -699,6 +767,13 @@ function varargout = bmw_glm_ss(what, varargin)
             hold off;
             xlabel('TR');
             ylabel('activation');
+        
+        case 'change_glm_path'
+            glmDir = fullfile(baseDir, [glmEstDir num2str(glm)]);
+            spm_file_path = fullfile(glmDir, sprintf('s%d',sn), 'SPM.mat');
+            old_path = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
+            new_path = baseDir;
+            spm_changepath(spm_file_path,old_path,new_path);
     end
 end
 
