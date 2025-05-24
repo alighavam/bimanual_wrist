@@ -26,16 +26,16 @@ end
 %% Fit hrf params - redo GLM:
 % baseDir = '/Users/alighavam/Desktop/Projects/bimanual_wrist/data/fMRI';
 % baseDir = '/Users/ali/Desktop/Projects/bimanual_wrist/data';
-baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
+baseDir = '/Users/aghavamp/Desktop/Projects/bimanual_wrist/data/fMRI';
 
-sn = 4;
+sn = 101;
 glm = 3;
 
 % spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm' num2str(glm) '/s' num2str(sn,'%.2d') '/SPM.mat']);
-spm_file = load(fullfile(baseDir,['glm' num2str(glm)], ['s' num2str(sn,'%.2d')], 'SPM.mat'));
-SPM = spm_file.SPM;
+spm_file = load(fullfile(baseDir,['glm' num2str(glm)], ['s' num2str(sn)], 'SPM.mat'));
+SPM = spm_file;
 % load ROI definition (R)
-R = load(fullfile(baseDir, 'ROI', ['s' num2str(sn,'%.2d')], sprintf('s%s_ROI_glm%d_region.mat', num2str(sn,'%.2d'), glm))); 
+R = load(fullfile(baseDir, 'ROI', ['s' num2str(sn)], sprintf('s%s_ROI_glm%d_region.mat', num2str(sn), glm))); 
 R=R.R;
 
 region_data = region_getdata(SPM.xY.VY,R);
@@ -47,7 +47,7 @@ r = 2;
 hrf_params = [8 14 1 1 6 0 32];
 pre = 8;
 post = 22;
-run = 7;
+run = 8;
 
 Yraw = region_data{r}; % Pick out data as a T x P matrix 
 
@@ -69,17 +69,17 @@ SPM = spmj_glm_convolve(SPM);
 [beta, Yhat, Yres] = spmj_glm_fit(SPM,Yraw);
 
 % Diagnostic plots
-figure;
-t=[SPM.xBF.dt*SPM.xBF.T0:SPM.xBF.dt:SPM.xBF.length]; 
-plot(t,SPM.xBF.bf);
-drawline([0],'dir','horz','linestyle','-');
-title(sprintf('params = %s',num2str(hrf_params)));
+% figure;
+% t=[SPM.xBF.dt*SPM.xBF.T0:SPM.xBF.dt:SPM.xBF.length]; 
+% plot(t,SPM.xBF.bf);
+% drawline([0],'dir','horz','linestyle','-');
+% title(sprintf('params = %s',num2str(hrf_params)));
 
 % Run, convolved design matrix, sum of regressors of interest
-figure;
-X=SPM.xX.X(SPM.Sess(run).row,SPM.Sess(run).col);
-plot(sum(X,2));
-title(sprintf('Run %d - overall response', run));
+% figure;
+% X=SPM.xX.X(SPM.Sess(run).row,SPM.Sess(run).col);
+% plot(sum(X,2));
+% title(sprintf('Run %d - overall response', run));
 
 figure;
 Yhat_run1 = mean(Yhat(SPM.Sess(run).row,:),2);

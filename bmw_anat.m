@@ -1,6 +1,8 @@
 function varargout = bmw_anat(what, varargin)
     if ismac
-        baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
+        usr_path = userpath;
+        usr_path = usr_path(1:end-17);
+        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
         % baseDir = '/Volumes/Diedrichsen_data$/data/bimanual_wrist';
     elseif isunix
         baseDir = '';
