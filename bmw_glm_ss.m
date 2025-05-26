@@ -13,13 +13,14 @@ function varargout = bmw_glm_ss(what, varargin)
         disp('Running on Windows or another OS');
     end
     
-    sn = [];
+    sn = 101;
     glm = [];
     type = 'spmT';
     atlas = 'ROI';
     derivs = [0, 0];
     hrf_params = [8 13 1 1 1.2 0 32];
-    vararginoptions(varargin,{'sn', 'type', 'glm', 'hrf_params', 'atlas','derivs'})
+    sn_list = [];
+    vararginoptions(varargin,{'sn', 'type', 'glm', 'hrf_params', 'atlas','derivs', 'sn_list'})
     
     glmEstDir = 'glm';
     behavDir = 'behavioural';
@@ -309,6 +310,210 @@ function varargout = bmw_glm_ss(what, varargin)
             
             varargout{1} = events;
         
+        case 'GLM:make_glm5'
+            % params I use: [6,16,1,1,6,32]
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 's*_scan.dat'));
+            D = dload(fullfile(dat_file.folder, dat_file.name));
+            D = getrow(D, ismember(D.BN,runs));
+            
+            angles = [0,60,120,180,240,300];
+            
+            events.BN = [];
+            events.TN = [];
+            events.onset = [];
+            events.duration = [];
+            events.eventtype = [];
+            events.Uni_or_Bi = [];
+            events.hand = []; % 0: left, 1: right
+            events.angle_left = []; % 0, 60, 120, 180, 240, 300
+            events.angle_right = []; % 0, 60, 120, 180, 240, 300
+            
+            % LEFT HAND:
+            for i = 1:length(angles)
+                rows = D.Uni_or_Bi==0  & D.Hand==0 & D.targetAngle_L==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('lhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(-1, [sum(rows), 1])];
+            end
+            
+            % RIGHT HAND:
+            for i = 1:length(angles)
+                rows = D.Uni_or_Bi==0  & D.Hand==1 & D.targetAngle_R==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('rhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(-1, [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(angles(i), [sum(rows), 1])];
+            end
+            
+            % BIMANUAL:
+            for i = 1:length(angles)
+                for j = 1:length(angles)
+                    rows = D.Uni_or_Bi==1 & D.targetAngle_L==angles(i) & D.targetAngle_R==angles(j);
+                    events.BN = [events.BN; D.BN(rows)];
+                    events.TN = [events.TN; D.TN(rows)];
+                    events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                    events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                    events.eventtype = [events.eventtype; repmat({sprintf('bi:%d_%d',angles(i),angles(j))}, [sum(rows), 1])];
+                    events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                    events.hand = [events.hand; repmat(2, [sum(rows), 1])];
+                    events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                    events.angle_right = [events.angle_right; repmat(angles(j), [sum(rows), 1])];
+                end
+            end
+            
+            events = struct2table(events);
+            events.onset = events.onset ./ 1000;
+            events.duration = events.duration ./ 1000;
+            
+            varargout{1} = events;
+        
+        case 'GLM:make_glm6'
+            % params I use: [5,16,1,1,6,32]
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 's*_scan.dat'));
+            D = dload(fullfile(dat_file.folder, dat_file.name));
+            D = getrow(D, ismember(D.BN,runs));
+            
+            angles = [0,60,120,180,240,300];
+            
+            events.BN = [];
+            events.TN = [];
+            events.onset = [];
+            events.duration = [];
+            events.eventtype = [];
+            events.Uni_or_Bi = [];
+            events.hand = []; % 0: left, 1: right
+            events.angle_left = []; % 0, 60, 120, 180, 240, 300
+            events.angle_right = []; % 0, 60, 120, 180, 240, 300
+            
+            % LEFT HAND:
+            for i = 1:length(angles)
+                rows = D.Uni_or_Bi==0  & D.Hand==0 & D.targetAngle_L==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('lhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(-1, [sum(rows), 1])];
+            end
+            
+            % RIGHT HAND:
+            for i = 1:length(angles)
+                rows = D.Uni_or_Bi==0  & D.Hand==1 & D.targetAngle_R==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('rhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(-1, [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(angles(i), [sum(rows), 1])];
+            end
+            
+            % BIMANUAL:
+            for i = 1:length(angles)
+                for j = 1:length(angles)
+                    rows = D.Uni_or_Bi==1 & D.targetAngle_L==angles(i) & D.targetAngle_R==angles(j);
+                    events.BN = [events.BN; D.BN(rows)];
+                    events.TN = [events.TN; D.TN(rows)];
+                    events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                    events.duration = [events.duration; repmat(10, [sum(rows), 1])];
+                    events.eventtype = [events.eventtype; repmat({sprintf('bi:%d_%d',angles(i),angles(j))}, [sum(rows), 1])];
+                    events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                    events.hand = [events.hand; repmat(2, [sum(rows), 1])];
+                    events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                    events.angle_right = [events.angle_right; repmat(angles(j), [sum(rows), 1])];
+                end
+            end
+            
+            events = struct2table(events);
+            events.onset = events.onset ./ 1000;
+            events.duration = events.duration ./ 1000;
+            
+            varargout{1} = events;
+        
+        case 'GLM:make_glm7'
+            % params I use: [5,16,1,1,6,32]
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 's*_scan.dat'));
+            D = dload(fullfile(dat_file.folder, dat_file.name));
+            D = getrow(D, ismember(D.BN,runs));
+            
+            angles = [0,60,120,180,240,300];
+            
+            events.BN = [];
+            events.TN = [];
+            events.onset = [];
+            events.duration = [];
+            events.eventtype = [];
+            events.Uni_or_Bi = [];
+            events.hand = []; % 0: left, 1: right
+            events.angle_left = []; % 0, 60, 120, 180, 240, 300
+            events.angle_right = []; % 0, 60, 120, 180, 240, 300
+            
+            % LEFT HAND:
+            for i = 1:length(angles)
+                rows = D.Uni_or_Bi==0  & D.Hand==0 & D.targetAngle_L==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                events.duration = [events.duration; repmat(1000, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('lhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(-1, [sum(rows), 1])];
+            end
+            
+            % RIGHT HAND:
+            for i = 1:length(angles)
+                rows = D.Uni_or_Bi==0  & D.Hand==1 & D.targetAngle_R==angles(i);
+                events.BN = [events.BN; D.BN(rows)];
+                events.TN = [events.TN; D.TN(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                events.duration = [events.duration; repmat(1000, [sum(rows), 1])];
+                events.eventtype = [events.eventtype; repmat({sprintf('rhand:%d', angles(i))}, [sum(rows), 1])];
+                events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                events.hand = [events.hand; D.Hand(rows)];
+                events.angle_left = [events.angle_left; repmat(-1, [sum(rows), 1])];
+                events.angle_right = [events.angle_right; repmat(angles(i), [sum(rows), 1])];
+            end
+            
+            % BIMANUAL:
+            for i = 1:length(angles)
+                for j = 1:length(angles)
+                    rows = D.Uni_or_Bi==1 & D.targetAngle_L==angles(i) & D.targetAngle_R==angles(j);
+                    events.BN = [events.BN; D.BN(rows)];
+                    events.TN = [events.TN; D.TN(rows)];
+                    events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
+                    events.duration = [events.duration; repmat(1000, [sum(rows), 1])];
+                    events.eventtype = [events.eventtype; repmat({sprintf('bi:%d_%d',angles(i),angles(j))}, [sum(rows), 1])];
+                    events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
+                    events.hand = [events.hand; repmat(2, [sum(rows), 1])];
+                    events.angle_left = [events.angle_left; repmat(angles(i), [sum(rows), 1])];
+                    events.angle_right = [events.angle_right; repmat(angles(j), [sum(rows), 1])];
+                end
+            end
+            
+            events = struct2table(events);
+            events.onset = events.onset ./ 1000;
+            events.duration = events.duration ./ 1000;
+            
+            varargout{1} = events;
+        
         case 'GLM:make_event'
             operation  = sprintf('GLM:make_glm%d', glm);
             
@@ -414,7 +619,7 @@ function varargout = bmw_glm_ss(what, varargin)
                 end
 
                 % Specify high pass filter
-                J.sess(run).hpf = 64;
+                J.sess(run).hpf = 128;
                 
                 % J.sess(run).multi
                 % Purpose: Specifies multiple conditions for a session. Usage: It is used
@@ -639,14 +844,16 @@ function varargout = bmw_glm_ss(what, varargin)
                 delete(spm_file);
             end
             
-            bmw_glm_ss('GLM:make_event', 'sn', sn, 'glm', glm)
-            bmw_glm_ss('GLM:design', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'derivs', [0,0])
-            bmw_glm_ss('GLM:estimate', 'sn', sn, 'glm', glm)
-            bmw_glm_ss('GLM:T_contrasts', 'sn', sn, 'glm', glm)
-            bmw_glm_ss('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT')
-            bmw_anat('ROI:define', 'sn', sn, 'glm', glm)
-            bmw_glm_ss('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm)
-            % bmw_glm_ss('GLM:change_SPM.mat_format', 'sn', sn, 'glm', glm)
+            for sn = sn_list
+                bmw_glm_ss('GLM:make_event', 'sn', sn, 'glm', glm)
+                bmw_glm_ss('GLM:design', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'derivs', [0,0])
+                bmw_glm_ss('GLM:estimate', 'sn', sn, 'glm', glm)
+                bmw_glm_ss('GLM:T_contrasts', 'sn', sn, 'glm', glm)
+                bmw_glm_ss('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT')
+                bmw_anat('ROI:define', 'sn', sn, 'glm', glm)
+                bmw_glm_ss('HRF:ROI_hrf_get', 'sn', sn, 'glm', glm)
+                % bmw_glm_ss('GLM:change_SPM.mat_format', 'sn', sn, 'glm', glm)
+            end
             
         case 'SURF:vol2surf'
             currentDir = pwd;

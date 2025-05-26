@@ -1,34 +1,9 @@
-sn = 7;
-T = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/ROI/s' num2str(sn,'%.2d') '/time_series_glm1.mat']);
-spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm1/s' num2str(sn,'%.2d') '/SPM.mat']);
-SPM = spm_file.SPM;
-
-%%
-runs = 1:size(T.y_raw,1)/740;
-roi = 2;
-
-for run = runs
-    x = 1:740;
-    y_raw = T.y_raw(SPM.Sess(run).row,roi);
-    y_adj = T.y_adj(SPM.Sess(run).row,roi);
-    y_hat = T.y_hat(SPM.Sess(run).row,roi);
-    y_res = T.y_res(SPM.Sess(run).row,roi);
-
-    figure;
-    % plot(x, y_raw, 'k', 'linewidth', 1.5); 
-    % plot(x, y_res, 'k', 'linewidth', 1.5); 
-    hold on;
-    plot(x, y_adj, 'k', 'linewidth', 1.5); 
-    plot(x, y_hat, 'r', 'linewidth', 1.5);
-    title('run %d',run)
-end
-
 %% Fit hrf params - redo GLM:
 % baseDir = '/Users/alighavam/Desktop/Projects/bimanual_wrist/data/fMRI';
 % baseDir = '/Users/ali/Desktop/Projects/bimanual_wrist/data';
 baseDir = '/Users/aghavamp/Desktop/Projects/bimanual_wrist/data/fMRI';
 
-sn = 101;
+sn = 104;
 glm = 3;
 
 % spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm' num2str(glm) '/s' num2str(sn,'%.2d') '/SPM.mat']);
@@ -44,10 +19,10 @@ region_data = region_getdata(SPM.xY.VY,R);
 %%
 
 r = 2;
-hrf_params = [8 14 1 1 6 0 32];
+hrf_params = [6 16 1 1 6 0 32];
 pre = 8;
 post = 22;
-run = 8;
+run = 3;
 
 Yraw = region_data{r}; % Pick out data as a T x P matrix 
 
@@ -69,17 +44,17 @@ SPM = spmj_glm_convolve(SPM);
 [beta, Yhat, Yres] = spmj_glm_fit(SPM,Yraw);
 
 % Diagnostic plots
-% figure;
-% t=[SPM.xBF.dt*SPM.xBF.T0:SPM.xBF.dt:SPM.xBF.length]; 
-% plot(t,SPM.xBF.bf);
-% drawline([0],'dir','horz','linestyle','-');
-% title(sprintf('params = %s',num2str(hrf_params)));
+figure;
+t=[SPM.xBF.dt*SPM.xBF.T0:SPM.xBF.dt:SPM.xBF.length]; 
+plot(t,SPM.xBF.bf);
+drawline([0],'dir','horz','linestyle','-');
+title(sprintf('params = %s',num2str(hrf_params)));
 
 % Run, convolved design matrix, sum of regressors of interest
-% figure;
-% X=SPM.xX.X(SPM.Sess(run).row,SPM.Sess(run).col);
-% plot(sum(X,2));
-% title(sprintf('Run %d - overall response', run));
+figure;
+X=SPM.xX.X(SPM.Sess(run).row,SPM.Sess(run).col);
+plot(sum(X,2));
+title(sprintf('Run %d - overall response', run));
 
 figure;
 Yhat_run1 = mean(Yhat(SPM.Sess(run).row,:),2);
@@ -97,9 +72,9 @@ figure;
 D = spmj_get_ons_struct(SPM);
 Yadj = Yres+Yhat; 
 for i=1:size(D.block,1)
-    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i)),post,'padding','nan')';
-    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i)),post,'padding','nan')';
-    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i)),post,'padding','nan')';
+    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i))-1,post,'padding','nan')';
+    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i))-1,post,'padding','nan')';
+    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i))-1,post,'padding','nan')';
 end
 
 T = getrow(D,mod(D.num,2)==1); % Get the first onset for each double 
