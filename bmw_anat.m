@@ -1,9 +1,13 @@
 function varargout = bmw_anat(what, varargin)
     if ismac
+        % usr_path = userpath;
+        % usr_path = usr_path(1:end-17);
+        % baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
+        
+        % UCL:
         usr_path = userpath;
         usr_path = usr_path(1:end-17);
-        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
-        % baseDir = '/Volumes/Diedrichsen_data$/data/bimanual_wrist';
+        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
     elseif isunix
         baseDir = '';
     else
@@ -199,6 +203,7 @@ function varargout = bmw_anat(what, varargin)
                 fullfile(anatomical_dir, subj_id, anatomical_name));
             
         case 'SURF:fs2wb'
+            current_path = pwd;
             % Resampling subject from freesurfer fsaverage to fs_LR        
             res  = 32;          % resolution of the atlas. options are: 32, 164
             hemi = [1, 2];      % list of hemispheres
@@ -208,7 +213,7 @@ function varargout = bmw_anat(what, varargin)
             if isempty(sn)
                 error('SURF:fs2wb -> ''sn'' must be passed to this function.')
             end
-    
+            
             subj_row = getrow(pinfo,pinfo.sn == sn);
             subj_id = subj_row.participant_id{1};  
             
@@ -217,9 +222,11 @@ function varargout = bmw_anat(what, varargin)
             fs_dir = fullfile(baseDir,freesurferDir);
             surf_resliceFS2WB(subj_id, fs_dir, outDir, 'hemisphere', hemi, 'resolution', sprintf('%dk', res))
             
+            cd(current_path);
+
         case 'ROI:define'
             sn = [];
-            glm = 1;
+            glm = [];
             atlas = 'ROI';
             
             vararginoptions(varargin,{'sn', 'atlas', 'glm'});
@@ -255,7 +262,7 @@ function varargout = bmw_anat(what, varargin)
                     r = r+1;
                 end
             end
-
+            
             R = region_calcregions(R, 'exclude', [2 3; 2 4; 2 5; 4 5; 8 9; 2 8;...
                 11 12; 11 13; 11 14; 13 14; 17 18; 11 17], 'exclude_thres', .8);
             

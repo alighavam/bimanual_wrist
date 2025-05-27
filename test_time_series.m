@@ -1,28 +1,37 @@
 %% Fit hrf params - redo GLM:
-% baseDir = '/Users/alighavam/Desktop/Projects/bimanual_wrist/data/fMRI';
-% baseDir = '/Users/ali/Desktop/Projects/bimanual_wrist/data';
-baseDir = '/Users/aghavamp/Desktop/Projects/bimanual_wrist/data/fMRI';
+usr_path = userpath;
+usr_path = usr_path(1:end-17);
+% baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
 
-sn = 104;
-glm = 3;
+% UCL:
+baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
+sn = 109;
+glm = 1;
+
+pinfo = dload(fullfile(baseDir,'participants.tsv'));
+
+% get participant row from participant.tsv
+participant_row = getrow(pinfo, pinfo.sn==sn);
+
+% get subj_id
+participant_id = participant_row.participant_id{1};
 
 % spm_file = load(['/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI/glm' num2str(glm) '/s' num2str(sn,'%.2d') '/SPM.mat']);
-spm_file = load(fullfile(baseDir,['glm' num2str(glm)], ['s' num2str(sn)], 'SPM.mat'));
+spm_file = load(fullfile(baseDir,['glm' num2str(glm)], participant_id, 'SPM.mat'));
 SPM = spm_file;
 % load ROI definition (R)
-R = load(fullfile(baseDir, 'ROI', ['s' num2str(sn)], sprintf('s%s_ROI_glm%d_region.mat', num2str(sn), glm))); 
+R = load(fullfile(baseDir, 'ROI', participant_id, sprintf('%s_ROI_glm%d_region.mat', participant_id, glm))); 
 R=R.R;
 
 region_data = region_getdata(SPM.xY.VY,R);
 % region_data = load('/Users/ali/Desktop/Projects/bimanual_wrist/data/region_data_s04.mat'); region_data=region_data.region_data;
 
 %%
-
 r = 2;
 hrf_params = [6 16 1 1 6 0 32];
 pre = 8;
 post = 22;
-run = 3;
+run = 1;
 
 Yraw = region_data{r}; % Pick out data as a T x P matrix 
 
@@ -82,7 +91,7 @@ traceplot([-pre:post],T.y_adj,'errorfcn','stderr'); % ,
 hold on;
 traceplot([-pre:post],T.y_hat,'linestyle',':',...
         'linewidth',3); %
-drawline([-7,0,7,14,21],'dir','vert','linestyle',':');
+% drawline([-7,0,7,14,21],'dir','vert','linestyle',':');
 
 drawline([0],'dir','vert','linestyle','--');
 drawline([0],'dir','horz','linestyle','-');

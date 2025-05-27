@@ -6,7 +6,10 @@ function varargout = bmw_glm_ss(what, varargin)
     if ismac
         usr_path = userpath;
         usr_path = usr_path(1:end-17);
-        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
+        % baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
+
+        % UCL:
+        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
     elseif isunix
         baseDir = '';
     else
@@ -977,10 +980,45 @@ function varargout = bmw_glm_ss(what, varargin)
         
         case 'change_glm_path'
             glmDir = fullfile(baseDir, [glmEstDir num2str(glm)]);
-            spm_file_path = fullfile(glmDir, sprintf('s%d',sn), 'SPM.mat');
-            old_path = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
-            new_path = baseDir;
+            spm_file_path = fullfile(glmDir, participant_id, 'SPM.mat');
+            old_path = ['/Users/aghavamp/Desktop/Projects/bimanual_wrist/data/UCL/',participant_id];
+            new_path = fullfile(glmDir, participant_id);
             spm_changepath(spm_file_path,old_path,new_path);
+            
+        case 'save_SPM_struct'
+            glmDir = fullfile(baseDir, [glmEstDir num2str(glm)]);
+            spm_file_path = fullfile(glmDir, participant_id, 'SPM.mat');
+            SPM = load(spm_file_path);
+            % save old file
+            save(fullfile(glmDir,participant_id,'SPM_old.mat'),'SPM');
+            
+            % new file:
+            SPM = SPM.SPM;
+            save(fullfile(glmDir,participant_id,'SPM.mat'),'-struct','SPM',spm_get_defaults('mat.format'));
+
+        case 'reginfo_for_UCL'
+            glmDir = fullfile(baseDir, [glmEstDir num2str(glm)]);
+            % SPM = load(fullfile(glmDir, participant_id, 'SPM.mat'));
+            SPM_info = load(fullfile(glmDir, participant_id, 'SPM_info.mat'));
+            reginfo = [];
+            for i = 1:length(SPM_info.sn)
+                tmp.sn = sn;
+                tmp.run = SPM_info.run(i);
+                if SPM_info.u_or_b(i)
+                    % if bimanual:
+                    tmp.name = {sprintf('bi:%d_%d',SPM_info.dirL(i),SPM_info.dirR(i))};
+                else
+                    if SPM_info.hand(i)
+                        % uni right hand:
+                        tmp.name = {sprintf('rhand:%d',SPM_info.dirR(i))};
+                    else
+                        % uni left hand:
+                        tmp.name = {sprintf('lhand:%d',SPM_info.dirL(i))};
+                    end
+                end
+                reginfo = addstruct(reginfo,tmp,'row','force');
+            end
+            dsave(fullfile(glmDir, participant_id, 'reginfo.tsv'),reginfo);
     end
 end
 
