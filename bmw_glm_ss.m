@@ -6,10 +6,10 @@ function varargout = bmw_glm_ss(what, varargin)
     if ismac
         usr_path = userpath;
         usr_path = usr_path(1:end-17);
-        % baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
+        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
 
         % UCL:
-        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
+        % baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
     elseif isunix
         baseDir = '';
     else
@@ -981,7 +981,7 @@ function varargout = bmw_glm_ss(what, varargin)
         case 'change_glm_path'
             glmDir = fullfile(baseDir, [glmEstDir num2str(glm)]);
             spm_file_path = fullfile(glmDir, participant_id, 'SPM.mat');
-            old_path = ['/Users/aghavamp/Desktop/Projects/bimanual_wrist/data/UCL/',participant_id];
+            old_path = ['/Users/aghavamp/Desktop/Projects/bimanual_wrist/data/UCL/glm1/s02'];
             new_path = fullfile(glmDir, participant_id);
             spm_changepath(spm_file_path,old_path,new_path);
             
