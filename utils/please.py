@@ -138,3 +138,23 @@ def make_it_pretty(ax):
 
     ax.spines["left"].set_bounds(ax.get_ylim()[0], ax.get_ylim()[-1])
     ax.spines["bottom"].set_bounds(ax.get_xticks()[0], ax.get_xticks()[-1])
+
+def matrix_to_vector(mat, include_diagonal=True):
+    """Convert upper triangle of symmetric matrix to 1D vector"""
+    triu_indices = np.triu_indices_from(mat, k=0 if include_diagonal else 1)
+    return mat[triu_indices], triu_indices
+
+def vector_to_matrix(vec, indices, N):
+    """Reconstruct full symmetric matrix from vector and upper-triangle indices."""
+    mat = np.zeros((N, N))
+    r_idx, c_idx = indices
+    mat[r_idx, c_idx] = vec
+    mat[c_idx, r_idx] = vec  # ensure symmetry
+    return mat
+
+def double_center(mat):
+    """Double center a square matrix (subtract row/col means, add grand mean)."""
+    row_mean = np.mean(mat, axis=1, keepdims=True)
+    col_mean = np.mean(mat, axis=0, keepdims=True)
+    grand_mean = np.mean(mat)
+    return mat - row_mean - col_mean + grand_mean
