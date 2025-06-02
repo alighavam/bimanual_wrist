@@ -158,3 +158,66 @@ def double_center(mat):
     col_mean = np.mean(mat, axis=0, keepdims=True)
     grand_mean = np.mean(mat)
     return mat - row_mean - col_mean + grand_mean
+
+def indicator(conds, cols):
+    '''
+    Create an indicator matrix Z where each row corresponds to a condition in `conds`,
+    and each column corresponds to a condition name in `cols`. An element Z[i, j] = 1
+    if conds[i] == cols[j], otherwise 0.
+
+    Parameters
+    ----------
+    conds : list or 1D numpy array of str
+        A sequence of condition names (length n).
+
+    cols : list or 1D array-like of str
+        A list or array of unique condition names to be used as columns in the indicator matrix.
+
+    Returns
+    -------
+    Z : numpy array of shape (n, len(cols))
+        Indicator matrix with 1 where `conds[i] == cols[j]`, else 0.
+    '''
+
+    # Ensure conds and cols are numpy arrays
+    conds = np.asarray(conds)
+    cols = list(cols)  # convert cols to list if it's an ndarray or other iterable
+
+    Z = np.zeros((len(conds), len(cols)), dtype=int)
+
+    for i, cond in enumerate(conds):
+        if cond in cols:
+            j = cols.index(cond)
+            Z[i, j] = 1
+    
+    return Z
+
+def flatten_matrix(mat, colnames, prefix):
+    """Returns a dict mapping 'prefix_colname' to matrix row"""
+    flat = {}
+    for i, col in enumerate(colnames):
+        flat[f"{prefix}_{col}"] = mat[i]
+    return flat
+
+def retrieve_matrix(row, prefix, colnames):
+    """
+    Reconstructs an MxM matrix from a row of a DataFrame using a prefix and colnames.
+
+    Parameters
+    ----------
+    row : pd.Series
+        A single row (from df.loc[...] or df.iloc[...]).
+
+    prefix : str
+        Prefix used in column names (e.g., 'G', 'D').
+
+    colnames : list of str
+        The names of the matrix columns/rows.
+
+    Returns
+    -------
+    np.ndarray
+        The reconstructed matrix (M x M).
+    """
+    mat = np.vstack([row[f"{prefix}_{col}"].values[0].flatten() for col in colnames])
+    return np.array(mat)
