@@ -797,7 +797,7 @@ function varargout = bmw_glm_ss(what, varargin)
                 conName = {'con','spmT'};
                 for n = 1:numel(conName)
                     oldName = fullfile(glm_dir, sprintf('%s_%2.4d.nii',conName{n},cname_idx));
-                    newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},SPM.xCon(cname_idx).name));
+                    newName = fullfile(glm_dir, sprintf('%s_%s.nii',conName{n},replace(SPM.xCon(cname_idx).name, ":", "-")));
                     movefile(oldName, newName);
                 end
             end
@@ -981,7 +981,7 @@ function varargout = bmw_glm_ss(what, varargin)
         case 'change_glm_path'
             glmDir = fullfile(baseDir, [glmEstDir num2str(glm)]);
             spm_file_path = fullfile(glmDir, participant_id, 'SPM.mat');
-            old_path = ['/Users/aghavamp/Desktop/Projects/bimanual_wrist/data/UCL/glm1/s02'];
+            old_path = ['/Users/aghavamp/Desktop/Projects/bimanual_wrist/data/fMRI/glm5/' participant_id];
             new_path = fullfile(glmDir, participant_id);
             spm_changepath(spm_file_path,old_path,new_path);
             
