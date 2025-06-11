@@ -1,11 +1,11 @@
 %% Fit hrf params - redo GLM:
 usr_path = userpath;
 usr_path = usr_path(1:end-17);
-% baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
+baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
 
 % UCL:
-baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
-sn = 109;
+% baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
+sn = 108;
 glm = 1;
 
 pinfo = dload(fullfile(baseDir,'participants.tsv'));
@@ -26,11 +26,12 @@ R=R.R;
 region_data = region_getdata(SPM.xY.VY,R);
 % region_data = load('/Users/ali/Desktop/Projects/bimanual_wrist/data/region_data_s04.mat'); region_data=region_data.region_data;
 
+
 %%
-r = 2;
-hrf_params = [6 16 1 1 6 0 32];
+r = 3;
+hrf_params = [4.5 9.5 1 0.4 2 0 32];
 pre = 8;
-post = 22;
+post = 20;
 run = 1;
 
 Yraw = region_data{r}; % Pick out data as a T x P matrix 
@@ -60,20 +61,20 @@ drawline([0],'dir','horz','linestyle','-');
 title(sprintf('params = %s',num2str(hrf_params)));
 
 % Run, convolved design matrix, sum of regressors of interest
-figure;
-X=SPM.xX.X(SPM.Sess(run).row,SPM.Sess(run).col);
-plot(sum(X,2));
-title(sprintf('Run %d - overall response', run));
+% figure;
+% X=SPM.xX.X(SPM.Sess(run).row,SPM.Sess(run).col);
+% plot(sum(X,2));
+% title(sprintf('Run %d - overall response', run));
 
-figure;
-Yhat_run1 = mean(Yhat(SPM.Sess(run).row,:),2);
-Yres_run1 = mean(Yres(SPM.Sess(run).row,:),2);
-Yadj_run1 = Yres_run1+Yres_run1; 
-t= SPM.Sess(run).row;
-hold on;
-plot(t, Yhat_run1, 'r', 'LineWidth', 1.5)
-plot(t, Yadj_run1, 'k', 'LineWidth', 1)
-title(sprintf('Run %d - overall response', run));
+% figure;
+% Yhat_run1 = mean(Yhat(SPM.Sess(run).row,:),2);
+% Yres_run1 = mean(Yres(SPM.Sess(run).row,:),2);
+% Yadj_run1 = Yres_run1+Yres_run1; 
+% t= SPM.Sess(run).row;
+% hold on;
+% plot(t, Yhat_run1, 'r', 'LineWidth', 1.5)
+% plot(t, Yadj_run1, 'k', 'LineWidth', 1)
+% title(sprintf('Run %d - overall response', run));
 
 % Get onset structure, cut-out the trials of choice, and plot evoked
 % response
@@ -81,12 +82,12 @@ figure;
 D = spmj_get_ons_struct(SPM);
 Yadj = Yres+Yhat; 
 for i=1:size(D.block,1)
-    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i))-1,post,'padding','nan')';
-    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i))-1,post,'padding','nan')';
-    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i))-1,post,'padding','nan')';
+    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i)),post,'padding','nan')';
+    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i)),post,'padding','nan')';
+    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i)),post,'padding','nan')';
 end
 
-T = getrow(D,mod(D.num,2)==1); % Get the first onset for each double 
+T = D; % Get the first onset for each double 
 traceplot([-pre:post],T.y_adj,'errorfcn','stderr'); % ,
 hold on;
 traceplot([-pre:post],T.y_hat,'linestyle',':',...
@@ -100,17 +101,101 @@ xlabel('TR');
 ylabel('activation');
 
 
+figure;
+% FIND GAP TRIALS:
+D = spmj_get_ons_struct(SPM);
+D.ons = D.ons - 1;
+D.iti = zeros(size(D.ons));
+% sort based on onsets:
+blocks = unique(D.block)';
+for b = blocks
+    % sorting:
+    rows = D.block==b;
 
+    ons = D.ons(rows);
+    event = D.event(rows);
+    eventname = D.eventname(rows);
+    num = D.num(rows);
+    
+    % sorting based on onset:
+    [~, ix] = sort(ons);
+    ons = ons(ix);
+    event = event(ix);
+    eventname = eventname(ix);
+    num = num(ix);
+    iti = diff(ons);
 
+    % adding to dataframe:
+    D.ons(rows) = ons;
+    D.event(rows) = event;
+    D.eventname(rows) = eventname;
+    D.num(rows) = num;
+    idx = find(rows);
+    D.iti(idx(2:end)) = iti;
+end
 
+Yadj = Yres+Yhat;
+for i=1:size(D.block,1)
+    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i))+1,post,'padding','nan')';
+    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i))+1,post,'padding','nan')';
+    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i))+1,post,'padding','nan')';
+end
 
+% find gap trials:
+idx = find(D.iti>10)-1;
+Tgap = getrow(D, idx);
 
+% select only specific condition:
+idx = find(contains(Tgap.eventname, 'lhand'));
+T = getrow(Tgap,idx);
 
+subplot(3,1,1)
+traceplot([-pre:post],T.y_adj,'errorfcn','stderr'); % ,
+hold on;
+traceplot([-pre:post],T.y_hat,'linestyle',':',...
+        'linewidth',3); %
+drawline([-7,0,12,19],'dir','vert','linestyle',':');
 
+drawline([0],'dir','vert','linestyle','--');
+drawline([0],'dir','horz','linestyle','-');
+hold off;
+xlabel('TR');
+ylabel('activation');
+title('lhand')
 
+% select only specific condition:
+idx = find(contains(Tgap.eventname, 'rhand'));
+T = getrow(Tgap,idx);
 
+subplot(3,1,2)
+traceplot([-pre:post],T.y_adj,'errorfcn','stderr'); % ,
+hold on;
+traceplot([-pre:post],T.y_hat,'linestyle',':',...
+        'linewidth',3); %
+drawline([-7,0,12,19],'dir','vert','linestyle',':');
 
+drawline([0],'dir','vert','linestyle','--');
+drawline([0],'dir','horz','linestyle','-');
+hold off;
+xlabel('TR');
+ylabel('activation');
+title('rhand')
 
+% select only specific condition:
+idx = find(contains(Tgap.eventname, 'bi'));
+T = getrow(Tgap,idx);
 
+subplot(3,1,3)
+traceplot([-pre:post],T.y_adj,'errorfcn','stderr'); % ,
+hold on;
+traceplot([-pre:post],T.y_hat,'linestyle',':',...
+        'linewidth',3); %
+drawline([-7,0,12,19],'dir','vert','linestyle',':');
 
+drawline([0],'dir','vert','linestyle','--');
+drawline([0],'dir','horz','linestyle','-');
+hold off;
+xlabel('TR');
+ylabel('activation');
+title('bi')
 

@@ -16,14 +16,14 @@ function varargout = bmw_glm_ss(what, varargin)
         disp('Running on Windows or another OS');
     end
     
-    sn = 101;
     glm = [];
+    sn = 101;
     type = 'spmT';
     atlas = 'ROI';
     derivs = [0, 0];
-    hrf_params = [8 13 1 1 1.2 0 32];
+    hrf_params = [];
     sn_list = [];
-    vararginoptions(varargin,{'sn', 'type', 'glm', 'hrf_params', 'atlas','derivs', 'sn_list'})
+    vararginoptions(varargin,{'type', 'sn', 'glm', 'atlas','derivs', 'sn_list'})
     
     glmEstDir = 'glm';
     behavDir = 'behavioural';
@@ -31,7 +31,7 @@ function varargout = bmw_glm_ss(what, varargin)
     imagingDir = 'imaging_data';
     wbDir = 'surfaceWB';
     regDir = 'ROI';
-
+    
     pinfo = dload(fullfile(baseDir,'participants.tsv'));
 
     % get participant row from participant.tsv
@@ -39,13 +39,14 @@ function varargout = bmw_glm_ss(what, varargin)
     
     % get subj_id
     participant_id = participant_row.participant_id{1};
+    hrf_params = str2double(split(participant_row.hrf_params{1},'-'))'; 
     
     % define subject runs:
     runs = spmj_dotstr2array(participant_row.glm_runs{1});
+
     switch what
         case 'GLM:make_glm1'
-            % run with hrf_params = [4 10]
-            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 'BimanualWrist_MR_*.dat'));
+            dat_file = dir(fullfile(baseDir, behavDir, participant_id, 's*_scan.dat'));
             D = dload(fullfile(dat_file.folder, dat_file.name));
             D = getrow(D, ismember(D.BN,runs));
             
@@ -66,7 +67,7 @@ function varargout = bmw_glm_ss(what, varargin)
                 rows = D.Uni_or_Bi==0  & D.Hand==0 & D.targetAngle_L==angles(i);
                 events.BN = [events.BN; D.BN(rows)];
                 events.TN = [events.TN; D.TN(rows)];
-                events.onset = [events.onset; D.startTimeReal(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
                 events.duration = [events.duration; repmat(10, [sum(rows), 1])];
                 events.eventtype = [events.eventtype; repmat({sprintf('lhand:%d', angles(i))}, [sum(rows), 1])];
                 events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
@@ -80,7 +81,7 @@ function varargout = bmw_glm_ss(what, varargin)
                 rows = D.Uni_or_Bi==0  & D.Hand==1 & D.targetAngle_R==angles(i);
                 events.BN = [events.BN; D.BN(rows)];
                 events.TN = [events.TN; D.TN(rows)];
-                events.onset = [events.onset; D.startTimeReal(rows)];
+                events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
                 events.duration = [events.duration; repmat(10, [sum(rows), 1])];
                 events.eventtype = [events.eventtype; repmat({sprintf('rhand:%d', angles(i))}, [sum(rows), 1])];
                 events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
@@ -88,14 +89,14 @@ function varargout = bmw_glm_ss(what, varargin)
                 events.angle_left = [events.angle_left; repmat(-1, [sum(rows), 1])];
                 events.angle_right = [events.angle_right; repmat(angles(i), [sum(rows), 1])];
             end
-
+            
             % BIMANUAL:
             for i = 1:length(angles)
                 for j = 1:length(angles)
                     rows = D.Uni_or_Bi==1 & D.targetAngle_L==angles(i) & D.targetAngle_R==angles(j);
                     events.BN = [events.BN; D.BN(rows)];
                     events.TN = [events.TN; D.TN(rows)];
-                    events.onset = [events.onset; D.startTimeReal(rows)];
+                    events.onset = [events.onset; D.startTimeReal(rows)+D.time2plan(rows)];
                     events.duration = [events.duration; repmat(10, [sum(rows), 1])];
                     events.eventtype = [events.eventtype; repmat({sprintf('bi:%d_%d',angles(i),angles(j))}, [sum(rows), 1])];
                     events.Uni_or_Bi = [events.Uni_or_Bi; D.Uni_or_Bi(rows)];
@@ -840,16 +841,17 @@ function varargout = bmw_glm_ss(what, varargin)
         case 'GLM:all'
             spm_get_defaults('cmdline', true);  % Suppress GUI prompts, no request for overwirte
             
-            % Check for and delete existing SPM.mat file
-            % spm_file = fullfile(baseDir, [glmEstDir num2str(glm)], ['subj' num2str(sn)], 'SPM.mat');
-            spm_file = fullfile(baseDir, [glmEstDir num2str(glm)], participant_id, 'SPM.mat');
-            if exist(spm_file, 'file')
-                delete(spm_file);
-            end
-            
             for sn = sn_list
+                % Check for and delete existing SPM.mat file
+                participant_row = getrow(pinfo, pinfo.sn==sn);
+                participant_id = participant_row.participant_id{1};
+                spm_file = fullfile(baseDir, [glmEstDir num2str(glm)], participant_id, 'SPM.mat');
+                if exist(spm_file, 'file')
+                    delete(spm_file);
+                end
+
                 bmw_glm_ss('GLM:make_event', 'sn', sn, 'glm', glm)
-                bmw_glm_ss('GLM:design', 'sn', sn, 'glm', glm, 'hrf_params', hrf_params, 'derivs', [0,0])
+                bmw_glm_ss('GLM:design', 'sn', sn, 'glm', glm, 'derivs', [0,0])
                 bmw_glm_ss('GLM:estimate', 'sn', sn, 'glm', glm)
                 bmw_glm_ss('GLM:T_contrasts', 'sn', sn, 'glm', glm)
                 bmw_glm_ss('SURF:vol2surf', 'sn', sn, 'glm', glm, 'type', 'spmT')

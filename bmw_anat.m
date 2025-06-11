@@ -1,13 +1,11 @@
 function varargout = bmw_anat(what, varargin)
     if ismac
-        % usr_path = userpath;
-        % usr_path = usr_path(1:end-17);
-        % baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
-        
-        % UCL:
         usr_path = userpath;
         usr_path = usr_path(1:end-17);
-        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
+        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
+        
+        % UCL:
+        % baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
     elseif isunix
         baseDir = '';
     else
@@ -265,6 +263,7 @@ function varargout = bmw_anat(what, varargin)
             
             R = region_calcregions(R, 'exclude', [2 3; 2 4; 2 5; 4 5; 8 9; 2 8;...
                 11 12; 11 13; 11 14; 13 14; 17 18; 11 17], 'exclude_thres', .8);
+            fprintf('\n')
             
             output_path = fullfile(baseDir, regDir, participant_id);
             if ~exist(output_path, 'dir')
