@@ -43,7 +43,7 @@ function varargout = bmw_glm_ss(what, varargin)
     
     % define subject runs:
     runs = spmj_dotstr2array(participant_row.glm_runs{1});
-
+    
     switch what
         case 'GLM:make_glm1'
             dat_file = dir(fullfile(baseDir, behavDir, participant_id, 's*_scan.dat'));

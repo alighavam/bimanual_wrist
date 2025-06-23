@@ -5,7 +5,7 @@ baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI')
 
 % UCL:
 % baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','UCL');
-sn = 108;
+sn = 102;
 glm = 1;
 
 pinfo = dload(fullfile(baseDir,'participants.tsv'));
@@ -52,10 +52,14 @@ SPM = spmj_glm_convolve(SPM);
 
 % Restimate the betas and get predicted and residual response
 [beta, Yhat, Yres] = spmj_glm_fit(SPM,Yraw);
+regressor_names = {SPM.Vbeta.descrip};
+lhand_idx = find(contains(regressor_names, 'lhand'));
+rhand_idx = find(contains(regressor_names, 'rhand'));
+bi_idx = find(contains(regressor_names, 'bi'));
 
 % Diagnostic plots
 figure;
-t=[SPM.xBF.dt*SPM.xBF.T0:SPM.xBF.dt:SPM.xBF.length]; 
+t=[SPM.xBF.dt*SPM.xBF.T0:SPM.xBF.dt:SPM.xBF.length];
 plot(t,SPM.xBF.bf);
 drawline([0],'dir','horz','linestyle','-');
 title(sprintf('params = %s',num2str(hrf_params)));
