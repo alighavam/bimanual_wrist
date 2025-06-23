@@ -958,9 +958,9 @@ function varargout = bmw_glm_ss(what, varargin)
             % response
             figure;
             D = spmj_get_ons_struct(SPM);
-            r = 2;
+            r = 3; % M1_L
             pre = 8;
-            post = 21;
+            post = 20;
             for i=1:size(D.block,1)
                 D.y_adj(i,:)=cut(time_series.y_adj(:,2),pre,round(D.ons(i)),post,'padding','nan')';
                 D.y_hat(i,:)=cut(time_series.y_hat(:,2),pre,round(D.ons(i)),post,'padding','nan')';

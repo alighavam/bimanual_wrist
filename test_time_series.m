@@ -28,8 +28,10 @@ region_data = region_getdata(SPM.xY.VY,R);
 
 
 %%
-r = 3;
-hrf_params = [4.5 9.5 1 0.4 2 0 32];
+r = 3; % M1_L
+% r = 12; % M1_R
+hrf_params = [5 10 0.6 1 3 0 32];
+% hrf_params = [4 10 0.6 0.1 2 0 32];
 pre = 8;
 post = 20;
 run = 1;
@@ -65,33 +67,33 @@ drawline([0],'dir','horz','linestyle','-');
 title(sprintf('params = %s',num2str(hrf_params)));
 
 % Run, convolved design matrix, sum of regressors of interest
-% figure;
-% X=SPM.xX.X(SPM.Sess(run).row,SPM.Sess(run).col);
-% plot(sum(X,2));
-% title(sprintf('Run %d - overall response', run));
+figure;
+X=SPM.xX.X(SPM.Sess(run).row,SPM.Sess(run).col);
+plot(sum(X,2));
+title(sprintf('Run %d - overall response', run));
 
-% figure;
-% Yhat_run1 = mean(Yhat(SPM.Sess(run).row,:),2);
-% Yres_run1 = mean(Yres(SPM.Sess(run).row,:),2);
-% Yadj_run1 = Yres_run1+Yres_run1; 
-% t= SPM.Sess(run).row;
-% hold on;
-% plot(t, Yhat_run1, 'r', 'LineWidth', 1.5)
-% plot(t, Yadj_run1, 'k', 'LineWidth', 1)
-% title(sprintf('Run %d - overall response', run));
+figure;
+Yhat_run1 = mean(Yhat(SPM.Sess(run).row,:),2);
+Yres_run1 = mean(Yres(SPM.Sess(run).row,:),2);
+Yadj_run1 = Yres_run1+Yres_run1; 
+t= SPM.Sess(run).row;
+hold on;
+plot(t, Yhat_run1, 'r', 'LineWidth', 1.5)
+plot(t, Yadj_run1, 'k', 'LineWidth', 1)
+title(sprintf('Run %d - overall response', run));
 
 % Get onset structure, cut-out the trials of choice, and plot evoked
 % response
 figure;
 D = spmj_get_ons_struct(SPM);
-Yadj = Yres+Yhat; 
+Yadj = Yres+Yhat;
 for i=1:size(D.block,1)
     D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i)),post,'padding','nan')';
     D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i)),post,'padding','nan')';
     D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i)),post,'padding','nan')';
 end
 
-T = D; % Get the first onset for each double 
+T = D; % Get the first onset for each double
 traceplot([-pre:post],T.y_adj,'errorfcn','stderr'); % ,
 hold on;
 traceplot([-pre:post],T.y_hat,'linestyle',':',...
@@ -108,7 +110,7 @@ ylabel('activation');
 figure;
 % FIND GAP TRIALS:
 D = spmj_get_ons_struct(SPM);
-D.ons = D.ons - 1;
+% D.ons = D.ons - 1;
 D.iti = zeros(size(D.ons));
 % sort based on onsets:
 blocks = unique(D.block)';
@@ -140,9 +142,9 @@ end
 
 Yadj = Yres+Yhat;
 for i=1:size(D.block,1)
-    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i))+1,post,'padding','nan')';
-    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i))+1,post,'padding','nan')';
-    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i))+1,post,'padding','nan')';
+    D.y_adj(i,:)=cut(mean(Yadj,2),pre,round(D.ons(i)),post,'padding','nan')';
+    D.y_hat(i,:)=cut(mean(Yhat,2),pre,round(D.ons(i)),post,'padding','nan')';
+    D.y_res(i,:)=cut(mean(Yres,2),pre,round(D.ons(i)),post,'padding','nan')';
 end
 
 % find gap trials:
