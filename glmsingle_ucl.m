@@ -33,7 +33,7 @@ regDir = 'ROI';
 
 pinfo = dload(fullfile(baseDir,'participants.tsv'));
 
-sn_list = [109,110,111,112,113,114,115];
+sn_list = [113];
 
 angle = [0,60,120,180,240,300];
 
@@ -72,6 +72,11 @@ for sn = sn_list
       end
     end
     
+    % swap design sessions 1:5 with 6:10:
+    tmpdes = design(1:5);
+    design(1:5) = design(6:10);
+    design(6:10) = tmpdes;
+    
     % load fMRI data
     data = cell(1,length(SPM.Sess));
     fname = unique(struct2table(SPM.xY.VY).fname);
@@ -83,12 +88,11 @@ for sn = sn_list
     end
     
     % 
-    opt = struct('wantmemoryoutputs',[0 0 0 1]);
-    [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
-
-    % copy subject glm mask to glmsingle direcotry:
-    copyfile(fullfile(baseDir,'glm1',participant_id,'mask.nii'),fullfile(outputdir,participant_id,'mask.nii'));
-
+    % opt = struct('wantmemoryoutputs',[0 0 0 1]);
+    % [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
+    % 
+    % % copy subject glm mask to glmsingle direcotry:
+    % copyfile(fullfile(baseDir,'glm1',participant_id,'mask.nii'),fullfile(outputdir,participant_id,'mask.nii'));
     
     % Save betas as nifti:
     % load glmsingle model
@@ -97,13 +101,13 @@ for sn = sn_list
     
     % get event onsets and sort chronological:
     D = spmj_get_ons_struct(SPM);
-    D.ons = D.ons-1;
+    % D.ons = D.ons-1;
     % sort based on onsets:
     blocks = unique(D.block)';
     for b = blocks
         % sorting:
         rows = D.block==b;
-    
+        
         ons = D.ons(rows);
         event = D.event(rows);
         eventname = D.eventname(rows);
@@ -126,6 +130,14 @@ for sn = sn_list
         D.iti(idx(2:end),1) = iti;
     end
     D.ons = D.ons*2.72;
+    
+    % swap runs 1:5 with 6:10
+    idx1 = D.block >= 6;
+    idx2 = D.block <= 5;
+    D_tmp1 = getrow(D, idx1);
+    D_tmp2 = getrow(D, idx2);
+    D = addstruct(D_tmp1, D_tmp2, 'row', 'force');
+    D.block = repelem(blocks,96)';
     
     % fix eventnames:
     for i = 1:length(D.eventname)
