@@ -199,3 +199,6 @@ for sn = sn_list
         niftiwrite(tstats,fullfile(niftidir,sprintf('tmap_%s.nii',replace(conditions{i},":", "-"))), infotmp);
     end 
 end
+
+
+%% Define tmaps
