@@ -83,7 +83,10 @@ for sn = sn_list
     % 
     opt = struct('wantmemoryoutputs',[0 0 0 1]);
     [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
+    
 
+
+    % =========== Ali's stuff after glm single fit
     % copy subject glm mask to glmsingle direcotry:
     copyfile(fullfile(baseDir,'glm1',participant_id,'mask.nii'),fullfile(outputdir,participant_id,'mask.nii'));
 
