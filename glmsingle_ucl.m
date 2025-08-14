@@ -33,7 +33,7 @@ regDir = 'ROI';
 
 pinfo = dload(fullfile(baseDir,'participants.tsv'));
 
-sn_list = [113];
+sn_list = [109, 110, 111, 112, 113, 114, 115];
 
 angle = [0,60,120,180,240,300];
 
@@ -50,7 +50,7 @@ for sn = sn_list
     stimdur     = 0.1;
     
     % Name of directory to which outputs will be saved
-    outputdir   = fullfile(baseDir, 'glmsingle');
+    outputdir   = fullfile(baseDir, 'glmsingle_jul30');
     
     %
     SPM = load(fullfile(SPM_folder,'SPM.mat'));
@@ -76,6 +76,11 @@ for sn = sn_list
     tmpdes = design(1:5);
     design(1:5) = design(6:10);
     design(6:10) = tmpdes;
+
+    % make session indicator
+    sessionindicator = ones(1,length(SPM.Sess))+1;
+    run_ses1 = str2double(split(participant_row.run_ses1{1},'.'));
+    sessionindicator(run_ses1) = 1;
     
     % load fMRI data
     data = cell(1,length(SPM.Sess));
@@ -87,12 +92,12 @@ for sn = sn_list
         data{zz} = tmp;
     end
     
-    % 
-    % opt = struct('wantmemoryoutputs',[0 0 0 1]);
-    % [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
-    % 
-    % % copy subject glm mask to glmsingle direcotry:
-    % copyfile(fullfile(baseDir,'glm1',participant_id,'mask.nii'),fullfile(outputdir,participant_id,'mask.nii'));
+    % Run glmsingle
+    opt = struct('wantmemoryoutputs',[0 0 0 1],'wantglmdenoise',1,'sessionindicator',sessionindicator);
+    [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
+
+    % copy subject glm mask to glmsingle direcotry:
+    copyfile(fullfile(baseDir,'glm1',participant_id,'mask.nii'),fullfile(outputdir,participant_id,'mask.nii'));
     
     % Save betas as nifti:
     % load glmsingle model
