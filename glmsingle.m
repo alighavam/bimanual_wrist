@@ -426,7 +426,7 @@ for sn = sn_list
         y_adj_roi = y_adj(from(i):to(i),:)';
         y_hat_roi = pred(from(i):to(i),:)';
         tmp = [];
-        tmp.region = repmat(roi_name(i),timepoints_per_session*length(designSINGLE),1);
+        tmp.region = repmat(char(roi_name(i)),timepoints_per_session*length(designSINGLE),1);
         tmp.run = repelem(1:length(designSINGLE),timepoints_per_session)';
         tmp.y_adj = mean(y_adj_roi,2);
         tmp.y_hat = mean(y_hat_roi,2);
@@ -438,5 +438,5 @@ for sn = sn_list
     T = addstruct(T,T_tmp,'row','force');
 end
 
-dsave('.analysis/timeseries_uwo.tsv',T);
+dsave('./analysis/timeseries_uwo.tsv',T);
 
