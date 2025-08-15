@@ -513,6 +513,8 @@ for sn = sn_list
     num_timepoints = vol_dims(4); % 740
     tmp = reshape(tmp, num_voxels, num_timepoints);
     maskindices = any(tmp ~= 0, 2);
+    ResMS = zeros(vol_dims(1) * vol_dims(2) * vol_dims(3),1);
+
     y_adj = zeros(sum(maskindices),7400);
     for ii=1:length(designSINGLE)
         data_run = data{ii};
@@ -640,6 +642,8 @@ for sn = sn_list
             pred(voxel_mask_for_hrf, time_indices) = Xb_group_centered'; % Transpose to fit (voxels x time)
         end
     end
+
+    residuals = y_adj-pred;
     
     % ROI summary:
     % T_tmp = [];
