@@ -99,22 +99,24 @@ def draw_board(ax, radius=5):
     """
     x_offset = radius+2
     y_offset = 0
-    
-    target_board_r = [{'radius':0, 'angle':0, 'sz':0.1, 'color':[0,0,0], 'x_offset':x_offset, 'y_offset':y_offset},
-                  {'radius':radius, 'angle':0, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
-                  {'radius':radius, 'angle':60, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
-                  {'radius':radius, 'angle':120, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
-                  {'radius':radius, 'angle':180, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
-                  {'radius':radius, 'angle':240, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
-                  {'radius':radius, 'angle':300, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset}]
+    center_size = 0.3
+    target_size = 0.3
 
-    target_board_l = [{'radius':0, 'angle':0, 'sz':0.1, 'color':[0,0,0], 'x_offset':-x_offset, 'y_offset':y_offset},
-                    {'radius':radius, 'angle':0, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
-                    {'radius':radius, 'angle':60, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
-                    {'radius':radius, 'angle':120, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
-                    {'radius':radius, 'angle':180, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
-                    {'radius':radius, 'angle':240, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
-                    {'radius':radius, 'angle':300, 'sz':0.15, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset}]
+    target_board_r = [{'radius':0, 'angle':0, 'sz':center_size, 'color':[0,0,0], 'x_offset':x_offset, 'y_offset':y_offset},
+                  {'radius':radius, 'angle':0, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
+                  {'radius':radius, 'angle':60, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
+                  {'radius':radius, 'angle':120, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
+                  {'radius':radius, 'angle':180, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
+                  {'radius':radius, 'angle':240, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset},
+                  {'radius':radius, 'angle':300, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':x_offset, 'y_offset':y_offset}]
+
+    target_board_l = [{'radius':0, 'angle':0, 'sz':center_size, 'color':[0,0,0], 'x_offset':-x_offset, 'y_offset':y_offset},
+                    {'radius':radius, 'angle':0, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
+                    {'radius':radius, 'angle':60, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
+                    {'radius':radius, 'angle':120, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
+                    {'radius':radius, 'angle':180, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
+                    {'radius':radius, 'angle':240, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset},
+                    {'radius':radius, 'angle':300, 'sz':target_size, 'color':[0.5,0.5,0.5], 'x_offset':-x_offset, 'y_offset':y_offset}]
 
     # plot circles at target locs:
     for target in target_board_r:
