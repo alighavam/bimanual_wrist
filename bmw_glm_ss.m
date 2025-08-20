@@ -745,7 +745,6 @@ function varargout = bmw_glm_ss(what, varargin)
             save(fullfile(subj_est_dir,'SPM_v7.mat'), '-struct', 'SPM', '-v7');
             
         case 'GLM:T_contrasts'
-            
             currentDir = pwd;
             
             replace_xCon   = true;
