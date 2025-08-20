@@ -86,8 +86,8 @@ for sn = sn_list
     end
     
     % 
-    % opt = struct('wantmemoryoutputs',[0 0 0 1],'wantlibrary',0,'wantglmdenoise',0,'wantfracridge',0,'sessionindicator',sessionindicator,'chunknum',100000);
-    % [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
+    opt = struct('wantmemoryoutputs',[0 0 0 1],'wantlibrary',1,'wantglmdenoise',0,'wantfracridge',0,'sessionindicator',sessionindicator,'chunknum',100000);
+    [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
 
     % =========== Ali's stuff after glm single fit
     % copy subject glm mask to glmsingle direcotry:
@@ -440,5 +440,222 @@ for sn = sn_list
 end
     
 dsave('./analysis/timeseries_uwo.tsv',T);
+
+
+%%
+clc
+clear
+close
+
+usr_path = userpath;
+usr_path = usr_path(1:end-17);
+baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
+
+% Add GLMsingle to the MATLAB path (in case the user has not already done so).
+GLMsingle_dir = '/Users/aghavamp/Desktop/Projects/GLMsingle';
+
+addpath(fullfile(GLMsingle_dir, 'matlab'));
+addpath(fullfile(GLMsingle_dir, 'matlab', 'utilities'));
+
+% if the submodules were installed we try to add their code to the path
+addpath(fullfile(GLMsingle_dir, 'matlab', 'fracridge', 'matlab'));
+
+clear GLMsingle_dir;
+
+glmEstDir = 'glm';
+behavDir = 'behavioural';
+anatomicalDir = 'anatomicals';
+imagingDir = 'imaging_data';
+wbDir = 'surfaceWB';
+regDir = 'ROI';
+outputdir = fullfile(baseDir, 'glmsingle');
+pinfo = dload(fullfile(baseDir,'participants.tsv'));
+
+tr = 1;
+stim_duration = 0.1;
+sn_list = [101, 102, 103, 104, 106, 107, 108];
+sn_list = [102];
+T = [];
+for sn = sn_list
+    participant_row = getrow(pinfo, pinfo.sn==sn);
+    % get participant_id
+    participant_id = participant_row.participant_id{1};
+    
+    SPM_folder  = fullfile(baseDir,'glm1',participant_id);
+    SPM = load(fullfile(SPM_folder,'SPM.mat'));
+    modelname = 'TYPEB_FITHRF.mat';
+    m = load(fullfile(outputdir, participant_id, modelname));
+    mask = niftiread(fullfile(baseDir,'glm1',participant_id,'mask.nii'));
+    designinfo = load(fullfile(outputdir, participant_id, 'DESIGNINFO.mat'));
+    R = load(fullfile(baseDir, regDir, participant_id, sprintf('%s_%s_glm%d_region.mat', participant_id, 'ROI', 1))); R=R.R;
+    
+    % get region voxels, "assuming all images have the SAME AFFINE":
+    X=[];Y=[];Z=[];
+    for r=1:length(R)
+        if (~isempty(R{r}))
+            [x,y,z]=spmj_affine_transform(R{r}.data(:,1),R{r}.data(:,2),R{r}.data(:,3),inv(SPM.xY.VY(1).mat));
+            from(r)=size(X,1)+1;
+            X=[X;x];Y=[Y;y];Z=[Z;z];
+            to(r)=size(X,1);
+        else 
+            from(r)=size(X,1)+1;
+            to(r)=size(X,1);
+        end 
+    end
+end
+
+
+
+%% visualize mask:
+region_names = ['','S1_l','M1_l','PMd_l','PMv_l','SMA_l','V1_l','SPLa_l','SPLp_l',...
+    '','S1_r','M1_r','PMd_r','PMv_r','SMA_r','V1_r','SPLa_r','SPLp_r'];
+roi = 10;
+x = round(X(from(roi):to(roi)));
+y = round(Y(from(roi):to(roi)));
+z = round(Z(from(roi):to(roi)));
+
+mask_smooth = smooth3(double(mask), 'box', 3);
+
+% ROI:
+indices = sub2ind(size(mask), x, y, z);
+ROI = zeros(size(mask));
+ROI(indices) = 1;
+ROI_smooth = smooth3(double(ROI), 'box', 3);
+
+% 2. Create the figure and plot the first surface
+figure;
+% Generate isosurface data for the first volume at an isovalue of 2
+s1 = isosurface(mask_smooth, 0.5); 
+% Plot the first surface as a patch and set its color to red
+p1 = patch(s1, 'FaceColor', 'red', 'EdgeColor', 'none', 'FaceAlpha', 0.3);
+isonormals(mask_smooth, p1); % Compute normals for lighting
+
+% 3. Hold the plot to add the second surface
+hold on;
+
+% 4. Plot the second surface
+% Generate isosurface data for the second volume at an isovalue of 1
+s2 = isosurface(ROI_smooth, 0.5);
+% Plot the second surface as a patch and set its color to blue
+p2 = patch(s2, 'FaceColor', 'blue', 'EdgeColor', 'none');
+isonormals(ROI_smooth, p2); % Compute normals for lighting
+
+% 5. Finalize the plot appearance
+title('Multiple Isosurfaces with Different Colors');
+axis equal;    % Set aspect ratio
+grid on;       % Add a grid
+view(3);       % Set to 3D view
+
+% Add lighting to make the surfaces look 3D
+camlight;
+lighting gouraud;
+
+% Release the hold on the figure
+hold off;
+
+
+% Get HRF index for the ROI voxels:
+hrfidx = m.HRFindex;
+roi_hrfs = hrfidx(indices);
+figure;
+hist(roi_hrfs)
+
+% visualize the hrf shape:
+idx = mode(roi_hrfs);
+hrflibrary = getcanonicalhrflibrary(stim_duration, tr);
+target_hrf = hrflibrary(idx,:);
+
+time_points_sec = (0:size(target_hrf, 2)-1) * tr;
+% 5. Create the plot
+figure;
+plot(time_points_sec, target_hrf, 'k-', 'LineWidth', 2);
+title(['HRF from Library (Index ', num2str(idx), ')']);
+xlabel('Time (seconds)');
+ylabel('Normalized Amplitude');
+grid on;
+axis tight; % Adjust axes to fit the data
+
+% Add a vertical line at time = 0 for reference
+hold on;
+plot([0 0], ylim, 'k--'); 
+hold off;
+
+
+%%
+% --- 1. SETUP: Get the Target HRF from GLMsingle ---
+hrf_library = getcanonicalhrflibrary(stim_duration, tr);
+
+% Create the time vector for the GLMsingle HRF
+time_vector_target = (0:length(target_hrf)-1) * tr;
+
+% --- 2. FITTING: Use fminsearch to find the best SPM parameters ---
+% Define the objective function (the error function)
+% This function will be called by fminsearch.
+objective_function = @(params) hrf_mismatch_error(params, target_hrf, time_vector_target);
+
+% Initial guess for the parameters. The default SPM values are a good start.
+% [delay_resp, delay_under, disp_resp, disp_under, ratio, onset, length]
+initial_params = [6 16 1 1 6 0 32]; 
+
+% Use fminsearch to find the parameters that minimize the error
+disp('Searching for best-fitting SPM HRF parameters...');
+options = optimset('MaxFunEvals', 500, 'Display', 'iter'); % Show progress
+best_params = fminsearch(objective_function, initial_params, options);
+
+disp('Found best parameters:');
+disp(best_params);
+
+% --- 3. VISUALIZATION: Compare the results ---
+% Generate the final, best-fitting HRF from SPM using the found parameters
+best_spm_hrf = generate_matched_spm_hrf(best_params, time_vector_target);
+
+% Plot both HRFs to see how good the fit is
+figure;
+plot(time_vector_target, target_hrf, 'b-', 'LineWidth', 2.5, 'DisplayName', 'Target (GLMsingle)');
+hold on;
+plot(time_vector_target, best_spm_hrf, 'r--', 'LineWidth', 2, 'DisplayName', 'Best Fit (SPM)');
+title('Comparison of Target HRF and SPM-based Fit');
+xlabel('Time (seconds)');
+ylabel('Normalized Amplitude');
+legend('show');
+grid on;
+
+% --- Helper Functions (place at the end of your script or in separate files) ---
+
+function sse = hrf_mismatch_error(params, target_hrf, time_vector_target)
+    % This function calculates the sum of squared errors (SSE) between the
+    % HRF generated by the current 'params' and the 'target_hrf'.
+    
+    % Generate the SPM HRF and resample it to match the target's time vector
+    generated_hrf = generate_matched_spm_hrf(params, time_vector_target)';
+    
+    % Calculate the error (sum of squared differences)
+    sse = sum((target_hrf - generated_hrf).^2);
+end
+
+function resampled_hrf = generate_matched_spm_hrf(params, time_vector_target)
+    % This function generates an HRF using spm_hrf at high resolution and
+    % then resamples it to match the time points of the target HRF.
+    
+    % Generate a high-resolution HRF from SPM. We set the TR to a small
+    % value (e.g., 0.1) to get a finely sampled curve.
+    high_res_tr = 0.1;
+    % Ensure the kernel length is long enough to capture the full response
+    p_temp = params;
+    p_temp(7) = max(32, time_vector_target(end) + 5); % Make sure it's long enough
+    
+    spm_hrf_high_res = spm_hrf(high_res_tr, p_temp);
+    spm_hrf_high_res = spm_hrf_high_res/max(spm_hrf_high_res);
+    time_vector_high_res = (0:length(spm_hrf_high_res)-1) * high_res_tr;
+
+    % Resample (interpolate) this high-res HRF at the exact time points
+    % of our target HRF.
+    resampled_hrf = interp1(time_vector_high_res, spm_hrf_high_res, time_vector_target, 'spline', 0)';
+    
+    % Normalize the resampled HRF to have a peak amplitude of 1, just like GLMsingle's
+    if any(resampled_hrf)
+        resampled_hrf = resampled_hrf / max(resampled_hrf);
+    end
+end
 
 
