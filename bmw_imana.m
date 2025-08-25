@@ -5,7 +5,10 @@ function varargout = bmw_imana(what, varargin)
     % quotes
     if ismac
         % baseDir = '/Volumes/Diedrichsen_data$/data/Chord_exp/EFC_patternfMRI';
-        baseDir = '/Users/alighavampour/Desktop/Projects/bimanual_wrist/data/fMRI';
+        usr_path = userpath;
+        usr_path = usr_path(1:end-17);
+        baseDir = fullfile(usr_path,'Desktop','Projects','bimanual_wrist','data','fMRI');
+
     elseif isunix
         baseDir = '';
     else
