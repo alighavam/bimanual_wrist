@@ -34,7 +34,6 @@ regDir = 'ROI';
 pinfo = dload(fullfile(baseDir,'participants.tsv'));
 
 sn_list = [101,102,103,104,106,107,108];
-sn_list = [101]
 for sn = sn_list
     % setup
     % get participant row from participant.tsv
@@ -86,8 +85,8 @@ for sn = sn_list
     end
     
     % 
-    opt = struct('wantmemoryoutputs',[0 0 0 1],'wantlibrary',1,'wantglmdenoise',0,'wantfracridge',0,'sessionindicator',sessionindicator,'chunknum',100000);
-    [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
+    % opt = struct('wantmemoryoutputs',[0 0 0 1],'wantlibrary',1,'wantglmdenoise',1,'wantfracridge',1,'sessionindicator',sessionindicator,'chunknum',100000);
+    % [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
 
     % =========== Ali's stuff after glm single fit
     % copy subject glm mask to glmsingle direcotry:
@@ -95,7 +94,7 @@ for sn = sn_list
 
     % Save betas as nifti:
     % load glmsingle model
-    modelname = 'TYPEB_FITHRF.mat';
+    modelname = 'TYPED_FITHRF_GLMDENOISE_RR.mat';
     m = load(fullfile(outputdir, participant_id, modelname));
     
     % get event onsets and sort chronological:
@@ -171,12 +170,52 @@ for sn = sn_list
     niftidir = fullfile(outputdir,participant_id);
     niftiwrite(R2,fullfile(niftidir,'R2.nii'), info);
     
+    % Make Contrast Maps:
+    % load reginfo:
+    reginfo = dload(fullfile(outputdir, participant_id, 'reginfo.tsv'));
+    
+    % load betas:
+    betafiles = dir(fullfile(outputdir, participant_id, 'beta*.nii'));
+    raw_beta_files = ~contains({betafiles.name}, 'smooth');
+    betafiles = betafiles(raw_beta_files);
+    
+    beta = {};
+    info = {};
+    for i = 1:length(betafiles)
+        beta{i,1} = niftiread(fullfile(betafiles(i).folder, betafiles(i).name));
+        % beta{i,1} = beta{i,1} .* single(mask);
+        info{i,1} = niftiinfo(fullfile(betafiles(i).folder, betafiles(i).name));
+    end
+    
+    % Make contrast
+    conditions = {'lhand','rhand','bi'};
+    for i = 1:length(conditions)
+        c = conditions{i};
+        idx = find(contains(reginfo.name,c));
+        select_betas = beta(idx);
+        cat4d = cat(4, select_betas{:});
+        avg = nanmean(cat4d,4);
+        avg(isnan(avg)) = 0;
+        % save contrast:
+        infotmp = info{1};
+        infotmp.Filename = [];
+        infotmp.Filemoddate = [];
+        infotmp.Filesize = [];
+        descrip = sprintf('con:%s',conditions{i});
+        infotmp.Description = descrip;
+        infotmp.raw.descrip = descrip;
+        niftidir = fullfile(outputdir,participant_id);
+        niftiwrite(avg,fullfile(niftidir,sprintf('con_%s.nii',replace(conditions{i},":", "-"))), infotmp);
+    end 
+
     % Make t-maps:
     % load reginfo:
     reginfo = dload(fullfile(outputdir, participant_id, 'reginfo.tsv'));
     
     % load betas:
     betafiles = dir(fullfile(outputdir, participant_id, 'beta*.nii'));
+    raw_beta_files = ~contains({betafiles.name}, 'smooth');
+    betafiles = betafiles(raw_beta_files);
     beta = {};
     info = {};
     for i = 1:length(betafiles)

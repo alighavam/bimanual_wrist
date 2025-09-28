@@ -50,7 +50,7 @@ for sn = sn_list
     stimdur     = 0.1;
     
     % Name of directory to which outputs will be saved
-    outputdir   = fullfile(baseDir, 'glmsingle_jul30');
+    outputdir   = fullfile(baseDir, 'glmsingle');
     
     %
     SPM = load(fullfile(SPM_folder,'SPM.mat'));
@@ -73,9 +73,9 @@ for sn = sn_list
     end
     
     % swap design sessions 1:5 with 6:10:
-    tmpdes = design(1:5);
-    design(1:5) = design(6:10);
-    design(6:10) = tmpdes;
+    % tmpdes = design(1:5);
+    % design(1:5) = design(6:10);
+    % design(6:10) = tmpdes;
 
     % make session indicator
     sessionindicator = ones(1,length(SPM.Sess))+1;
@@ -93,10 +93,10 @@ for sn = sn_list
     end
     
     % Run glmsingle
-    opt = struct('wantmemoryoutputs',[0 0 0 1],'wantglmdenoise',1,'sessionindicator',sessionindicator);
-    [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
-
-    % copy subject glm mask to glmsingle direcotry:
+    % opt = struct('wantmemoryoutputs',[0 0 0 1],'wantglmdenoise',1,'sessionindicator',sessionindicator);
+    % [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
+    % 
+    % % copy subject glm mask to glmsingle direcotry:
     copyfile(fullfile(baseDir,'glm1',participant_id,'mask.nii'),fullfile(outputdir,participant_id,'mask.nii'));
     
     % Save betas as nifti:
@@ -137,12 +137,12 @@ for sn = sn_list
     D.ons = D.ons*2.72;
     
     % swap runs 1:5 with 6:10
-    idx1 = D.block >= 6;
-    idx2 = D.block <= 5;
-    D_tmp1 = getrow(D, idx1);
-    D_tmp2 = getrow(D, idx2);
-    D = addstruct(D_tmp1, D_tmp2, 'row', 'force');
-    D.block = repelem(blocks,96)';
+    % idx1 = D.block >= 6;
+    % idx2 = D.block <= 5;
+    % D_tmp1 = getrow(D, idx1);
+    % D_tmp2 = getrow(D, idx2);
+    % D = addstruct(D_tmp1, D_tmp2, 'row', 'force');
+    % D.block = repelem(blocks,96)';
     
     % fix eventnames:
     for i = 1:length(D.eventname)
@@ -203,6 +203,42 @@ for sn = sn_list
     niftidir = fullfile(outputdir,participant_id);
     niftiwrite(R2,fullfile(niftidir,'R2.nii'), info);
     
+    % Make Contrast Maps:
+    % load reginfo:
+    reginfo = dload(fullfile(outputdir, participant_id, 'reginfo.tsv'));
+    
+    % load betas:
+    betafiles = dir(fullfile(outputdir, participant_id, 'beta*.nii'));
+    raw_beta_files = ~contains({betafiles.name}, 'smooth');
+    betafiles = betafiles(raw_beta_files);
+    beta = {};
+    info = {};
+    for i = 1:length(betafiles)
+        beta{i,1} = niftiread(fullfile(betafiles(i).folder, betafiles(i).name));
+        % beta{i,1} = beta{i,1} .* single(mask);
+        info{i,1} = niftiinfo(fullfile(betafiles(i).folder, betafiles(i).name));
+    end
+    
+    % Make contrast
+    conditions = {'lhand','rhand','bi'};
+    for i = 1:length(conditions)
+        c = conditions{i};
+        idx = find(contains(reginfo.name,c));
+        select_betas = beta(idx);
+        cat4d = cat(4, select_betas{:});
+        avg = nanmean(cat4d,4);
+        avg(isnan(avg)) = 0;
+        % save contrast:
+        infotmp = info{1};
+        infotmp.Filename = [];
+        infotmp.Filemoddate = [];
+        infotmp.Filesize = [];
+        descrip = sprintf('con:%s',conditions{i});
+        infotmp.Description = descrip;
+        infotmp.raw.descrip = descrip;
+        niftidir = fullfile(outputdir,participant_id);
+        niftiwrite(avg,fullfile(niftidir,sprintf('con_%s.nii',replace(conditions{i},":", "-"))), infotmp);
+    end
     
     % Make t-maps:
     % load reginfo:
@@ -210,6 +246,8 @@ for sn = sn_list
     
     % load betas:
     betafiles = dir(fullfile(outputdir, participant_id, 'beta*.nii'));
+    raw_beta_files = ~contains({betafiles.name}, 'smooth');
+    betafiles = betafiles(raw_beta_files);
     beta = {};
     info = {};
     for i = 1:length(betafiles)
@@ -239,3 +277,4 @@ for sn = sn_list
         niftiwrite(tstats,fullfile(niftidir,sprintf('tmap_%s.nii',replace(conditions{i},":", "-"))), infotmp);
     end 
 end
+
