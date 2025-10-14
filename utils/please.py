@@ -223,3 +223,17 @@ def retrieve_matrix(row, prefix, colnames):
     """
     mat = np.vstack([row[f"{prefix}_{col}"].values[0].flatten() for col in colnames])
     return np.array(mat)
+
+def cka(G1, G2):
+    '''
+    Compute the Centered Kernel Alignment (CKA) between two kernel (similarity) matrices G1 and G2.
+    '''
+    # Center the matrices
+    n = G1.shape[0]
+    H = np.eye(n) - np.ones((n, n)) / n
+    G1_centered = H @ G1 @ H
+    G2_centered = H @ G2 @ H
+
+    # Compute the CKA
+    cka = np.sum(G1_centered * G2_centered) / (np.sqrt(np.sum(G1_centered ** 2)) * np.sqrt(np.sum(G2_centered ** 2)))
+    return cka
