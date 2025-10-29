@@ -237,3 +237,87 @@ def cka(G1, G2):
     # Compute the CKA
     cka = np.sum(G1_centered * G2_centered) / (np.sqrt(np.sum(G1_centered ** 2)) * np.sqrt(np.sum(G2_centered ** 2)))
     return cka
+
+# def draw_sig_lines(ax, pairs, line_height_gap=2, line_height_increase=3):
+#     """
+#     Draws significance lines between bars on a barplot.
+
+#     Args:
+#         ax: The matplotlib axes object.
+#         pairs: A list of pairs of bar indices to connect, e.g., [[0, 1], [0, 2]].
+#         line_height_gap: Gap above the tallest bar in a pair.
+#         line_height_increase: Vertical distance between stacked significance lines.
+#     """
+#     bars = ax.patches
+#     bar_heights = [b.get_height() for b in bars]
+#     bar_centers = [b.get_x() + b.get_width() / 2 for b in bars]
+    
+#     # Sort pairs to draw lower lines first
+#     pairs = sorted(pairs, key=lambda p: max(bar_heights[p[0]], bar_heights[p[1]]))
+
+#     # Keep track of the y-level for lines to avoid overlaps
+#     line_levels = []
+
+#     for p in pairs:
+#         bar1_idx, bar2_idx = p
+        
+#         x1, x2 = bar_centers[bar1_idx], bar_centers[bar2_idx]
+#         max_h = max(bar_heights[bar1_idx], bar_heights[bar2_idx])
+        
+#         # Determine the y-level for the line
+#         y = max_h + line_height_gap
+#         while any(abs(y - level) < line_height_increase for level in line_levels):
+#             y += line_height_increase
+#         line_levels.append(y)
+
+#         # Draw the horizontal line and vertical ticks
+#         ax.plot([x1, x1, x2, x2], [y - 1, y, y, y - 1], color='k', linewidth=1)
+
+def draw_sig_lines(ax, df, x_col, y_col, pairs, plot_type='boxplot', line_height_gap=2, line_height_increase=3, height_tick=2):
+    """
+    Draws significance lines between categories on a plot.
+    Works for boxplot and barplot.
+
+    Args:
+        ax: The matplotlib axes object.
+        df: The pandas DataFrame used for plotting.
+        x_col: The name of the column for the x-axis categories.
+        y_col: The name of the column for the y-axis values.
+        pairs: A list of pairs of category indices to connect.
+        plot_type: The type of plot ('boxplot' or 'barplot').
+        line_height_gap: Gap above the highest point in a pair.
+        line_height_increase: Vertical distance between stacked lines.
+    """
+    # Get category names in the order they are plotted
+    cats = df[x_col].unique()
+    
+    # Keep track of the y-level for lines to avoid overlaps
+    line_levels = []
+
+    for p in pairs:
+        cat1_idx, cat2_idx = p
+        cat1_name, cat2_name = cats[cat1_idx], cats[cat2_idx]
+
+        # Get x-coordinates for the centers of the categories
+        x1, x2 = cat1_idx, cat2_idx
+
+        # Determine the y-level for the line
+        if plot_type == 'boxplot':
+            # For boxplots, find the max value in the data for the two categories
+            max_val = df[df[x_col].isin([cat1_name, cat2_name])][y_col].max()
+        elif plot_type == 'barplot':
+            # For barplots, get the height of the bars
+            bar_heights = [b.get_height() for b in ax.patches]
+            max_val = max(bar_heights[cat1_idx], bar_heights[cat2_idx])
+        else:
+            raise ValueError("plot_type must be 'boxplot' or 'barplot'")
+
+        y = max_val + line_height_gap
+        while any(abs(y - level) < line_height_increase for level in line_levels):
+            y += line_height_increase
+        line_levels.append(y)
+
+        # Draw the horizontal line and vertical ticks
+        ax.plot([x1, x1, x2, x2], [y - (height_tick), y, y, y - (height_tick)], color='k', linewidth=1)
+
+
