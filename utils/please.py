@@ -238,40 +238,6 @@ def cka(G1, G2):
     cka = np.sum(G1_centered * G2_centered) / (np.sqrt(np.sum(G1_centered ** 2)) * np.sqrt(np.sum(G2_centered ** 2)))
     return cka
 
-# def draw_sig_lines(ax, pairs, line_height_gap=2, line_height_increase=3):
-#     """
-#     Draws significance lines between bars on a barplot.
-
-#     Args:
-#         ax: The matplotlib axes object.
-#         pairs: A list of pairs of bar indices to connect, e.g., [[0, 1], [0, 2]].
-#         line_height_gap: Gap above the tallest bar in a pair.
-#         line_height_increase: Vertical distance between stacked significance lines.
-#     """
-#     bars = ax.patches
-#     bar_heights = [b.get_height() for b in bars]
-#     bar_centers = [b.get_x() + b.get_width() / 2 for b in bars]
-    
-#     # Sort pairs to draw lower lines first
-#     pairs = sorted(pairs, key=lambda p: max(bar_heights[p[0]], bar_heights[p[1]]))
-
-#     # Keep track of the y-level for lines to avoid overlaps
-#     line_levels = []
-
-#     for p in pairs:
-#         bar1_idx, bar2_idx = p
-        
-#         x1, x2 = bar_centers[bar1_idx], bar_centers[bar2_idx]
-#         max_h = max(bar_heights[bar1_idx], bar_heights[bar2_idx])
-        
-#         # Determine the y-level for the line
-#         y = max_h + line_height_gap
-#         while any(abs(y - level) < line_height_increase for level in line_levels):
-#             y += line_height_increase
-#         line_levels.append(y)
-
-#         # Draw the horizontal line and vertical ticks
-#         ax.plot([x1, x1, x2, x2], [y - 1, y, y, y - 1], color='k', linewidth=1)
 
 def draw_sig_lines(ax, df, x_col, y_col, pairs, plot_type='boxplot', line_height_gap=2, line_height_increase=3, height_tick=2):
     """
@@ -320,4 +286,78 @@ def draw_sig_lines(ax, df, x_col, y_col, pairs, plot_type='boxplot', line_height
         # Draw the horizontal line and vertical ticks
         ax.plot([x1, x1, x2, x2], [y - (height_tick), y, y, y - (height_tick)], color='k', linewidth=1)
 
+def analyze_r(D, cond_order, specify_conditions=None, within_corr_conditions=None):
+    """
+    gets the pearson r between the first and second half of the conditions. 
+    
+    Params:
+    D (list): List of PCM Datasets
+    cond_order (list): The order of conditions such as [0,1,2,3,4,5,6,7,8,9,10,11] must be passed.
+    specify_conditions (np.array): array of condition indices to only include in the analysis. If None, all conditions are used. 
+                                   the indices are based on the first half of the conditions (e.g., [0,1,2,3,4,5])
+
+    Returns:
+    r (np.array): list of pearson r values for each subject
+    """
+    N = len(D) # number of subjects
+    nParts = len(np.unique(D[0].obs_descriptors['part_vec']))
+    r = np.zeros(N)
+    r_within_contra = np.zeros(N)
+    r_within_ipsi = np.zeros(N)
+    for i in range(N):
+        measurements = D[i].measurements
+        cond_vec = np.array(cond_order * nParts)
+        num_voxels = measurements.shape[1]
+        ncond = 12
+
+        # Create an array to store the averaged patterns for each condition
+        averaged_patterns = np.zeros((ncond, num_voxels))
+
+        if specify_conditions is not None:
+            mask = np.array(specify_conditions)
+        else:
+            mask = np.arange(6)
+
+        # Loop through each condition and calculate the average pattern
+        for c in range(ncond):
+            # Find rows corresponding to the current condition
+            condition_indices = cond_vec == c
+            # Calculate the mean pattern for the current condition
+            averaged_patterns[c, :] = measurements[condition_indices, :].mean(axis=0)
+        
+        # get the contra conditions: 
+        y_contra_avg = averaged_patterns[0:6, :]
+        y_contra_avg = y_contra_avg[mask, :]
+        # remove mean across conditions:
+        y_contra_avg = y_contra_avg - y_contra_avg.mean(axis=0)
+        # flatten the averaged patterns:
+        y_contra_vec = y_contra_avg.flatten()
+        
+        # get the ipsi conditions:
+        y_ipsi_avg = averaged_patterns[6:12, :]
+        y_ipsi_avg = y_ipsi_avg[mask, :]
+        # remove mean across conditions:
+        y_ipsi_avg = y_ipsi_avg - y_ipsi_avg.mean(axis=0)
+        # flatten the averaged patterns:
+        y_ipsi_vec = y_ipsi_avg.flatten()
+
+        if within_corr_conditions is not None:
+            y1 = y_contra_avg[np.array([]), :]
+            y2 = y_contra_avg[within_corr_conditions, :]
+            y1_vec = y1.flatten()
+            y2_vec = y2.flatten()
+            r_within_contra[i] = np.corrcoef(y1_vec, y2_vec)[0,1]
+
+            y1 = y_ipsi_avg[within_corr_conditions, :]
+            y2 = y_ipsi_avg[within_corr_conditions, :]
+            y1_vec = y1.flatten()
+            y2_vec = y2.flatten()
+            r_within_ipsi[i] = np.corrcoef(y1_vec, y2_vec)[0,1]
+            
+        # concatenate the contra and ipsi patterns:
+        r[i] = np.corrcoef(y_contra_vec, y_ipsi_vec)[0,1]
+
+    if within_corr_conditions is not None:
+        return r, r_within_contra, r_within_ipsi
+    return r
 
