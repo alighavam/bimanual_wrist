@@ -93,7 +93,7 @@ def find_closest_index(vector, value):
     index = np.argmin(np.abs(vector - value))
     return index
 
-def draw_board(ax, radius=5):
+def draw_board(ax, radius=5, zorder=0):
     """
         Draw the experiment display with circle targets on the given axes.
     """
@@ -122,13 +122,13 @@ def draw_board(ax, radius=5):
     for target in target_board_r:
         circle = patches.Circle((target['radius']*np.cos(np.deg2rad(target['angle'])) + target['x_offset'],
                                 target['radius']*np.sin(np.deg2rad(target['angle'])) + target['y_offset']),
-                                radius=target['sz'], color=target['color'])
+                                radius=target['sz'], color=target['color'], zorder=zorder)
         ax.add_patch(circle)
     # plot circles at target locs:
     for target in target_board_l:
         circle = patches.Circle((target['radius']*np.cos(np.deg2rad(target['angle'])) + target['x_offset'],
                                 target['radius']*np.sin(np.deg2rad(target['angle'])) + target['y_offset']),
-                                radius=target['sz'], color=target['color'])
+                                radius=target['sz'], color=target['color'], zorder=zorder)
         ax.add_patch(circle)
 
 def make_it_pretty(ax):
@@ -237,7 +237,6 @@ def cka(G1, G2):
     # Compute the CKA
     cka = np.sum(G1_centered * G2_centered) / (np.sqrt(np.sum(G1_centered ** 2)) * np.sqrt(np.sum(G2_centered ** 2)))
     return cka
-
 
 def draw_sig_lines(ax, df, x_col, y_col, pairs, plot_type='boxplot', line_height_gap=2, line_height_increase=3, height_tick=2):
     """
