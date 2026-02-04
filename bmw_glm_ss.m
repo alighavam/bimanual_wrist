@@ -533,7 +533,42 @@ function varargout = bmw_glm_ss(what, varargin)
                 expr = sprintf('((i1 .* %f) ./ i2) .* 100', subj_scale_factor);
                 spm_imcalc(images, output_name, expr);
             end
+        case 'GLM:PSC_all_conds'
+            subj_est_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id);   
+            constant_name = 'constant';
+
+            % make condition names:
+            angles = 0:60:300;
+            [X, Y] = meshgrid(angles, angles);
+            condition_names = cell(numel(X), 1);
+            for i = 1:numel(X)
+                condition_names{i} = sprintf('bi-%d_%d', X(i), Y(i));
+            end
+
+            % Inside your subject loop...
+            SPM = load(fullfile(subj_est_dir, 'SPM.mat'));
             
+            % 1. Re-construct the "Isolated Event" regressor for THIS subject's specific HRF
+            bf = SPM.xBF.bf;          % This contains the subject-specific normalized HRF
+            dt = SPM.xBF.dt;
+            duration = 2.5;           % Your 2500ms duration
+            
+            % Create 2.5s boxcar
+            n_bins = round(duration / dt);
+            stim = zeros(size(bf,1) + n_bins, 1);
+            stim(1:n_bins) = 1;
+            
+            % Convolve and find peak
+            X_sim = conv(stim, bf);
+            subj_scale_factor = max(X_sim); % around 35.768
+            
+            for i = 1:length(condition_names)
+                images = {fullfile(subj_est_dir,sprintf('con_%s.nii',condition_names{i})), fullfile(subj_est_dir,sprintf('con_%s.nii',constant_name))};
+                output_name = fullfile(subj_est_dir,sprintf('PSC_%s.nii',condition_names{i}));
+
+                expr = sprintf('((i1 .* %f) ./ i2) .* 100', subj_scale_factor);
+                spm_imcalc(images, output_name, expr);
+            end
             
         case 'GLM:all'
             spm_get_defaults('cmdline', true);  % Suppress GUI prompts, no request for overwirte
