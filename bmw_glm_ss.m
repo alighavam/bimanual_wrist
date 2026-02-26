@@ -504,7 +504,7 @@ function varargout = bmw_glm_ss(what, varargin)
 
             cd(currentDir)
 
-        case 'GLM:PSC'
+        case 'Contrast:PSC'
             subj_est_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id);   
             condition_names = {'lhand','rhand','bi'};
             constant_name = 'constant';
@@ -533,7 +533,7 @@ function varargout = bmw_glm_ss(what, varargin)
                 expr = sprintf('((i1 .* %f) ./ i2) .* 100', subj_scale_factor);
                 spm_imcalc(images, output_name, expr);
             end
-        case 'GLM:PSC_all_conds'
+        case 'Contrast:PSC_all_conds'
             subj_est_dir = fullfile(baseDir, sprintf('glm%d', glm), participant_id);   
             constant_name = 'constant';
 
