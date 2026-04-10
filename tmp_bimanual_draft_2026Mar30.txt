@@ -1,0 +1,142 @@
+Methods
+Participants 
+Twelve healthy right-handed participants (mean age = XXX years, SD = XXX; X females) were recruited. 
+All procedure were approved by the Western University Research Ethics Board (ref XXXXXX) and designed in accordance with the Declaration of Helsinki.
+Apparatus
+The wrist device featured a fencing grip mounted to allow rotation along two axes: vertical rotation (pitch) and horizontal rotation (yaw). Each axis was continuously recorded by a Bourns 3382H potentiometer at a sampling rate of 200 Hz. Horizontal and vertical wrist rotations were mapped to position of a cursor along the x- and y-axes on the screen, respectively. Home position of the cursor was calibrated to each participant's resting wrist posture, such that any deviation from this position displaced the cursor from center, and returning to the resting posture re-centered the cursor. This design allowed participants to move the cursor to any location on the screen. 
+In addition to the cursors, at all times, the screen displayed the home position and six potential target locations as unfilled circles arranged radially at 0°, 60°, 120°, 180°, 240°, and 300°, 3.5 mm (center-to-center). The circles  up to indicate appearance of a target.
+Task
+Participants were instructed to keep their gaze on a central fixation cross throughout each trial. At the start of each trial, participants had to keep both left and right hand cursors in the center home position. One or two bright targets appeared indicating a unimanual or bimanual condition and the fixation cross turned red indicating planning time, during which participants had to remain at the home position. After 2000 ms the fixation cross turned green signalling the go-cue. Over the subsequent 4500 ms participants had to leave the home position (within 800 ms), reach to the target(s), and return to the home position
+
+, followed by a 500 ms rest period. Any error turned the fixation cross blue for the remainder of the trial without interrupting it to alert the participant of a mistake. 
+Experiment
+articipants completed all possible unimanual (6 left-hand + 6 right-hand = 12 conditions) and bimanual (6 × 6 = 36 conditions) movements10 blocksWithin each block, trials were presented every 7 seconds, with 9 randomly selected trials extended by an additional 5 seconds of rest to improve baseline BOLD signal estimation. At the end of the last participants remained still in the home position for an additional 10 seconds to capture the slow hemodynamic response function (HRF) related to trial. Between blocks, participants were allowed to rest for a few minutes. The unimanual and bimanual conditions had a success rate of 96.7% and 83.6%. 
+To familiarizeparticipants supine position for 10 blocks in a behavioural session prior to the first scanning day. 
+Behavioral analysis 
+We used the position of the cursor at the go-cue determined the moment trajectory maximally deviated from that position. The distance was used as the movement amplitude, and the direction was compared to the target to measure the angular error in degrees. This analysis was performed on both hands, whether hand was instructed or not.
+fMRI data acquisition
+Six of twelve participants collected at Western University. We used 3 Tesla Siemens MAGNETOM Prisma scanner with a 32-channel head coil, at the Centre for Functional and Metabolic Mapping located at Western university. Blood oxygenation level-dependent (BOLD) response was measured while participants were doing the experiment in a supine position. Each block of the experiment lasted ~740s during which 740 functional images were obtained using a multi-band 2D echoplanar imaging sequence with a TR repetition time of 1000ms. The other six were collected at Welcome Trust UCL Siemens Trio 3 Tesla MR system in a similar setup with TR of 2720msPer image, we acquired 32 slices in an interleaved sequence at a thickness of 2.3mm (2.7mm in UCL) and an in-plane resolution of 2.3 x 2.3 mm2. To account for the magnetic field inhomogeneities we acquired field map at each scanning session. Furthermore, a T1-weighted anatomical scan was obtained using MPRAGE (magnetization-prepared rapid gradient echo) sequence with a voxel size of 1mm isotropic. 
+Preprocessing and first-level analysis
+Using SPM12, functional images were realigned and field map corrected (unwarped) to correct for head motion and magnetic field inhomogeneities. The functional images were then co-registered to each participant’s anatomical image. Next, the minimally preprocessed data were analyzed using a general linear model (GLM; CITE Friston). Per run, each of conditions was modeled with a regressor. An intercept regressor was also added for each . Finally, first-level GLM estimated the size of the evoked activity for each condition ( weights). Using those values, we calculated the percent signal change (PSC) for each condition relative to the baseline activation (rest) for each voxel for all conditions. The PSCs were then averaged across all runs. For all the subsequent analyses, the  weights of each voxel were divided by the root mean square error from the first-level GLM.
+Surface reconstruction
+We used Freesurfer (CITE Fischl et al 1999a, Dale et al 1999?) to reconstruct the participant’s pial and white/gray matter surfaces based on their T1-weighted anatomical image. The individual surfaces were then aligned across participants and spherically registered to match a group template surface atlas (CITE Fishcl et al. 1999b). Finally, surfaces were resampled to a left-right symmetric template (fs_LR32k; CITE van essen 2012) included in the connectome workbench distribution (CITE Marcus et al 2011). This allowed projection of each participant’s volume data onto the group surface map.
+ROI definition
+Based on the CITE Glasser et al. (2016) we identified 7 anatomical regions of interest (ROIs) including primary motor (M1) and somatosensory cortex (S1), ventral and dorsal premotor cortex (PMv and PMd), the anterior and posterior aspects superior parietal lobules (SPLa and SPLp), and the supplementary motor areas (SMA). Detailed descriptions of these definitions can be found in previous studies, CITE Wiestler and Diedrichsen 2013; Kornysheva and Diedrichsen, 2014; Wiestler et al. 2014; Shahbazi et al 2024.
+
+
+
+Multivariate fMRI analysis and encoding
+We used the cross-validated squared Mahalanobis dissimilarity (i.e., crossnobis dissimilarity) to quantify the differences between fMRI activity patterns of different reaching conditions (CITE Walther et al., 2016; Diedrichsen et al., 2020). 
+
+
+Within each participant, we calculated the crossnobis dissimilarity between every pair of conditions, resulting in a 48 by 48 dissimilarity matrix for each ROI. As an overall measure of encoding, we averaged the dissimilarities of the 15 (6 x 5 / 2) unimanual contralateral and 15 ipsilateral distances as well as 630 (36 x 35 / 2) bimanual distances.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Results
+Unimanual performance was relatively accurate
+In the unimanual conditions, participants were instructed to make rapid out-and-back movements with the wrist to one of six peripheral targets at 0, 60, 120, …, 300deg (fig. 1B pink trajectories). To quantify the movement accuracy, we calculated the angular error of the cursor from the target at the peak reaching amplitude. Across participants, the error for the left hand (4.12 ± 0.19 deg) was slightly larger than for the right hand (4.06 ± 0.17deg); however this difference was not significant (t(11) = 0.315, p = 0.379; fig. 1D). Participants also succeeded in holding the other hand still. The average deviation of the non-moving hand during the trial was 2.1± 0.8mm, and the direction of these movements distributed randomly and unrelated to the target of the other hand (fig. 1C). These confirm that unimanual hand movements did not cause systematic involuntary movements of the other hand. 
+
+Figure 1: Task & performance. A) Task diagram shown with the target angles (e.g., 0, 60, …) and their respective wrist joint actions (e.g., flx, flxup, …). The drawing of the hands shows the neutral position. B) Reach trajectories of a subject in the scanner for unimanual (pink) and bimanual trajectories (black) overlaid by unimanual for comparison. C) Angular error at peak reach amplitude for the instructed (orange) and uninstructed (blue) hand during unimanual conditions. D) Absolute angular error for the left (L) and right (R) hand across unimanual and three types of bimanual conditions (intrinsic, extrinsic, incongruent). 
+Contralateral and ipsilateral motor regions activate during unimanual movements
+We first determined the changes in the blood-oxygenation level-dependent (BOLD) signal when participants moved unimanually. As expected, we found signal increases in the primary motor (M1) and somatosensory cortex (S1), in the ventral (PMv) and dorsal (PMd) premotor cortex, in the superior parietal lobules, both in the anterior (SPLa) and posterior (SPLp) aspect, as well as in the supplementary motor areas SMA (ig. 2A). In a Regions of Interest (ROI) analysis (ig. 2B), the increases in the BOLD signal were significant in all these regions during both contralateral and ipsilateral hand movements (t23 > 7.96, pfdr < 2.34e-8).
+The activity in PMv and SPLp was approximately symmetric with equal activation during contra- and ipsilateral hand movements (t23 < 1.65, p > 0.065). In all other ROIs, the contralateral activity was significantly larger than ipsilateral activity (t23 > 5.075, p < 2.72e-5). This difference was especially large in M1 and S1, where the contralateral activity was 3.48x larger than ipsilateral activity (fig. 2B). 
+
+Figure 2: BOLD increase during unimanual conditions. A) Group-averaged percent signal change (PSC) mapped across the cortical surface, shown for the left and right hemisphere. Approximate locations of regions of interest (ROIs) are labeled. Anatomical surfaces are symmetric between hemispheres. PSCs thresholded by 0.2%. B) Percent signal change within each ROI for contralateral (red), ipsilateral (blue) and bimanual (gray) wrist movements.
+Encoding of movement directions across the motor regions
+While activation against rest suggest a possible involvement of a region is involved in the control of a reaching movement, we sought to determine whether these regions also encoded movement directions. To measure the strength of this encoding, we estimated the average cross-nobis distance between the activity patterns associated with each of the six unimanual movement directions (fig. 3A; see searchlight analysis in methods). 
+Because the dissimilarity measure was cross validated (see methods) we could test the average dissimilarity against zero to determine whether a ROI showed a significant encoding for movement direction (Fig. 3B). In M1 and S1, the encoding for the contralateral movement was significantly larger than for the ipsilateral movement (t23 > 2.70, pfdr < 0.23). Nonetheless, the ipsilateral encoding in these two regions remained significant (t23 > 1.80, p_fdr < 0.042). In all other ROIs, we found significant encoding for the direction of both contralateral and ipsilateral hand (t_23 > 1.99, p_fdr < 0.029), while no significant differences between the two (t23 < 1.05, pfdr > 0.29). These results suggest a relatively bilateral representation in parietal and premotor areas, and a more unilateral representation in primary motor areas. Nonetheless, encoding of the ipsilateral hand movement was found in all ROIs. 
+ 
+Figure 3: Directional encoding during unimanual and bimanual movements. A) Group-averaged cross-validated Euclidean distance mapped with a searchlight across the cortical surface, shown for the left and right hemisphere. Approximate locations of regions of interest (ROIs) are labeled. Anatomical surfaces are symmetric between hemispheres. B) Average distance within each ROI for contralateral (red), ipsilateral (blue) and bimanual (gray) wrist movements.
+Contra- and ipsilateral brain activity patterns are intrinsically organized
+We found that in many parietal, motor and premotor regions, both the contra- and ipsilateral movement was represented. How does the same population of neurons organize these two distinct movements? We considered three possibilities. First, the activity patterns of contralateral and ipsilateral could be independently organized, such that the patterns indicating movements of the left and right hand are uncorrelated. Neurophysiological studies of M1 have argued for such an orthogonal organization, thereby allowing the regions to represent the movement without causing unintended movement of the non-moving hand [CITE]. Alternatively, the contra- and ipsilateral activity patterns could be either related in the joint/muscle space (intrinsically organized; fig. 3A: top panel) or related in the direction space (extrinsically organized; fig. 3B: top panel). 
+To test this, we correlated the corresponding intrinsic (or extrinsic) activity patterns of the contra- and ipsilateral hands. Intrinsic correlations were significant and positive in all ROIs after multiple tests correction (t23> 2.09, pfdr < 0.028; fig. 3A). The only exception was S1, for which the intrinsic correlation failed to become significant (t23 = 1.62, pfdr = 0.059). The extrinsic correlations were not significant in any ROI after multiple tests correction (pfdr > 0.145 Fig. 3B). 
+Therefore, our data presents evidence for an intrinsic organization between contralateral and ipsilateral activity patterns rather than an independent or extrinsic one
+
+
+
+
+
+
+
+
+Figure 4: Relationship between contra- and ipsilateral activity is intrinsic. A) Pearson's correlation between brain activity patterns evoked by conditions in which the contralateral and ipsilateral wrists move to similar directions in joint space (intrinsic, e.g., 1: both flex inwards). B) Same analysis as in A, but for conditions in which the contralateral and ipsilateral wrists move to the same direction in extrinsic space (e.g., 1: left wrist flex inwards and right wrist extend outwards). C) Within each ROI, the maximum likelihood estimate of correlation is plotted against the functional signal-to-noise ratio (fSNR) for intrinsic (red) and extrinsic (black) matched conditions. Each dot represents a hemisphere of a subject. The distribution of correlation values is shown to the right of each plot, and the solid line indicates the mean estimated correlation.
+
+
+
+Sign of interference in bimanual reaching
+In the bimanual conditions, participants reached to all possible 36 target pairs (6 left x 6 right; fig. 1B black trajectories). We considered three types of bimanual conditions: intrinsic match, in which the left and right wrists produce similar movements in joint space (e.g., both flexing inward); extrinsic match, in which the left and right targets share the same spatial angle (e.g., both at 60°); and incongruent, in which the movements of the two hands were related neither intrinsically nor extrinsically. The absolute angular error for intrinsic and extrinsic conditions was not significantly different from the unimanual (t11 > 0.656, p > 0.263; Fig. 1D). However, we observed some indication of a slight bimanual interference effect. The absolute angular error during incongruent movements was 0.31 ± 0.05 deg larger than during intrinsically and extrinsically matching movements (t11 > 3.09, p < 0.005). No significant difference was found between intrinsically and extrinsically matching movements (t11 = 0.28, p = 0.78). 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Figure 6: Bimanual activity patterns decomposition. A) The brain activity patterns during bimanual conditions decomposed into contralateral, ipsilateral, and bimanual-specific (interaction) components. The group averaged Euclidean distance across conditions associated with each component is mapped on the cortical surface. B) Unimanual and bimanual component distances are plotted within each ROI. One-sided t-test > 0; p<0.05:*, p<0.01:**, p<0.001:***
+
+
+
+
+
+On the pattern level, the encoding stayed the same – the direction -specific pattern for the contralateral hand did not change from unimanual to bimanual…. 
+Independent ipsilateral representation disappears during bimanual movements
+
+In contrast, the encoding for the ipsilateral movement decreased dramatically in all reion by xxx% Significance.  
+Only in SMA and PMv () did an independent encoding of the ipsi movement remain, inb the other region, there was no evidence for ipsi encoding (ttt) 
+Bimanual interaction effect 
+However in all regions there was an interaction RPORT STATS DESCRIBE DISTRIBUTION of component. 
+
+
+
+SECTION – Interaction?
+Discussion
+The intrinsic relationship suggests that when for example right hand flexes inwards and left hand stays still, the motor regions in the right hemisphere receive an intrinsic copy of this information, i.e., left hand flexes inwards. Despite this observation, we did not see sign of involuntary movements during unimanual conditions. 
+
+

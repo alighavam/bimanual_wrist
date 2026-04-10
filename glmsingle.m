@@ -85,8 +85,8 @@ for sn = sn_list
     end
     
     % 
-    % opt = struct('wantmemoryoutputs',[0 0 0 1],'wantlibrary',1,'wantglmdenoise',1,'wantfracridge',1,'sessionindicator',sessionindicator,'chunknum',100000);
-    % [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
+    opt = struct('wantmemoryoutputs',[0 0 0 1],'wantlibrary',1,'wantglmdenoise',1,'wantfracridge',1,'sessionindicator',sessionindicator,'chunknum',100000);
+    [results] = GLMestimatesingletrial(design,data,stimdur,tr,fullfile(outputdir, participant_id),opt);
 
     % =========== Ali's stuff after glm single fit
     % copy subject glm mask to glmsingle direcotry:
