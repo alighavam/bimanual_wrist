@@ -360,3 +360,17 @@ def analyze_r(D, cond_order, specify_conditions=None, within_corr_conditions=Non
         return r, r_within_contra, r_within_ipsi
     return r
 
+def remove_subj_mean(df):
+    df_rm = df.copy()
+    # df_rm = df_rm[df_rm['region']=='SPLp']
+    # CKA = df_rm['CKA'].copy().reset_index(drop=True)
+    # CKA
+    # subject mean across models:
+    CKA_subj = np.mean(CKA.values, axis=1)
+
+    # remove subject mean from each row of CKA but keep it as dataframe:
+    CKA_rm = CKA.values - CKA_subj[:,None]
+
+    # add back the global mean to all rows and columns:
+    CKA_rm = CKA_rm + np.mean(CKA_subj)
+    CKA_rm = pd.DataFrame(CKA_rm, columns=CKA.columns)
