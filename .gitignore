@@ -14,3 +14,5 @@
 /monkey_data
 /_tmp_pydeps
 /tools/_vendor
+*.pdf
+*.pdf
